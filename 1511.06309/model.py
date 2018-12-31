@@ -1,6 +1,6 @@
 # Imports
 from keras.models import Sequential, Model
-from keras.layers import Conv2d, ConvLSTM2D, InputLayer, UpSampling2D
+from keras.layers import Conv2d, ConvLSTM2D, InputLayer, UpSampling2D, MaxPooling2D
 from keras.callbacks import TensorBoard, EarlyStopping, LearningRateScheduler, ModelCheckpoint
 from keras.initializers import glorot_uniform, RandomUniform
 
@@ -17,9 +17,9 @@ class AutoEnc():
 		self.spatial_filter_size = 7
 		self.convlstm_filters = 64
 		self.convlstm_filter_size = 7
-		self.optical_flow_layers = 2
-		self.optical_flow_layers_filters = [2, 2]
-		self.optical_flow_layer_filter_size = [15,15]
+		# self.optical_flow_layers = 2
+		self.optical_flow_layers_filters = 2
+		self.optical_flow_layer_filter_size = 15
 
 		self.lr = 1e-4
 		self.delta = 1e-3
@@ -45,31 +45,80 @@ class AutoEnc():
 
 	def get_spatial_encoder(self):
 		spatial_encoder = Sequential()
-		spatial_encoder.add(Conv2d(input=self.inp_dims, filters=self.spatial_filters, kernel_size=self.spatial_filter_size, kernel_initializer=glorot_uniform))
+		spatial_encoder.add(
+							Conv2d(
+								   input=self.inp_dims,
+								   filters=self.spatial_filters,
+								   kernel_size=self.spatial_filter_size,
+								   kernel_initializer=glorot_uniform,
+								   activation='tanh'
+								)
+							)
+
+		spatial_encoder.add(MaxPooling2D())
 
 		return spatial_encoder
 	
 	def get_spatial_decoder(self):
 		spatial_decoder = Sequential()
-		spatial_decoder.add(Conv2d(input=(), filters=self.spatial_filters, kernel_size=self.spatial_filter_size, kernel_initializer=glorot_uniform))
+		spatial_decoder.add(
+							Conv2d(
+								   input=(),
+								   filters=self.spatial_filters,
+								   kernel_size=self.spatial_filter_size,
+								   kernel_initializer=glorot_uniform,
+								)
+							)
+
 		spatial_decoder.add(UpSampling2D())
 
 		return spatial_decoder
 	
 	def get_lstm(self):
 		lstmModel = Sequential()
-		lstmModel.add(ConvLSTM2D(input=(), filters=self.convlstm_filters, kernel_size=self.convlstm_filter_size, kernel_initializer=RandomUniform(minval=-0.08, maxval=0.08)))
+		lstmModel.add(
+					  ConvLSTM2D(
+								input=(),
+								filters=self.convlstm_filters,
+								kernel_size=self.convlstm_filter_size,
+								kernel_initializer=RandomUniform(minval=-0.08, maxval=0.08)
+							)
+					)
 
 		return lstmModel
 
 	def get_optical_flow(self):
 		optical_flow = Sequential()
 		
-		for i in range(self.optical_flow_layers):
-			optical_flow.add(Conv2d(filters=self.optical_flow_layers_filters[i], kernel_size=self.optical_flow_layer_filter_size[i]))
+		optical_flow.add(
+						 Conv2d(
+							    input=(),
+								filters=self.optical_flow_layers_filters,
+								kernel_size=self.optical_flow_layer_filter_size
+							)
+						)
+		
+		optical_flow.add(
+						 Conv2d(
+								filters=self.optical_flow_layers_filters,
+								kernel_size=self.optical_flow_layer_filter_size
+							)
+						)
+		
 		
 		optical_flow.add(Conv2d(kernel_size=(1,1)))
+
+		optical_flow.add(
+						Conv2d(
+							filters=2,
+							kernel_size=3,
+							trainable=False
+						)
+					)
+					
 		optical_flow.add(utils.HuberLossLayer())
+
+		optical_flow.layers[2].trainable=False
 
 		return optical_flow
 
@@ -95,4 +144,4 @@ class AutoEnc():
 		tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=True, write_images=True)
 		lrschedule = LearningRateScheduler(schedule, verbose=0)
 
-		self.model.fit(train_x, train_y, callbacks=[checkpoint, earlystop, tensorboard, lrschedule])
+		self.model.fit(train_x, train_y, epochs=20, batch_size=16 , callbacks=[checkpoint, earlystop, tensorboard, lrschedule])

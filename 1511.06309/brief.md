@@ -2,6 +2,7 @@
 (arxiv:1511.06309)
 
 Read The Complete paper <a href='https://arxiv.org/abs/1511.06309'>here</a>
+Torch code from the authors available <a href='https://github.com/viorik/ConvLSTM'>here</a>
 
 <br />
 
@@ -19,12 +20,12 @@ The model works as follows :
 ######  The LSTM uses <a href='https://arxiv.org/abs/1506.04214'>convLSTM</a> architecure,so it uses convolutions instead of linear operations, thus greatly reducing the parameters as well as producing encoding in the same layout as the spatial encoder. 
 
 
-<b><i>i<sub>t</sub></i></b> = σ(x<sub>t</sub> ∗ w<sub>xi</sub> + h<sub>t-1</sub> ∗ w<sub>hi</sub> + w<sub>ibias</sub>)
-<b><i>f<sub>t</sub></i></b> = σ(x<sub>t</sub> ∗ w<sub>xf</sub> + h<sub>t−1</sub> ∗ w<sub>hf</sub> + w<sub>fbias</sub>)
-<b><i>c˜<sub>t</sub></i></b> = tanh(x<sub>t</sub> ∗ w<sub>xc˜</sub> + h<sub>t−1</sub> ∗ w<sub>hc˜</sub> + w<sub>c˜bias</sub>)
-<b><i>c<sub>t</sub></i></b> = c˜<sub>t</sub> <b>.</b> i<sub>t</sub> + c<sub>t−1</sub> <b>.</b> f<sub>t</sub>
-<b><i>o<sub>t</sub></i></b> = σ(x<sub>t</sub> ∗ w<sub>xo</sub> + h<sub>t−1</sub> ∗ w<sub>ho</sub> + w<sub>obias</sub>)
-<b><i>h<sub>t</sub></i></b> = o<sub>t</sub> <b>.</b> tanh(c<sub>t</sub>)
+<b><i>i<sub>t</sub></i></b> = σ(x<sub>t</sub> ∗ w<sub>xi</sub> + h<sub>t-1</sub> ∗ w<sub>hi</sub> + w<sub>ibias</sub>)<br />
+<b><i>f<sub>t</sub></i></b> = σ(x<sub>t</sub> ∗ w<sub>xf</sub> + h<sub>t−1</sub> ∗ w<sub>hf</sub> + w<sub>fbias</sub>)<br />
+<b><i>c˜<sub>t</sub></i></b> = tanh(x<sub>t</sub> ∗ w<sub>xc˜</sub> + h<sub>t−1</sub> ∗ w<sub>hc˜</sub> + w<sub>c˜bias</sub>)<br />
+<b><i>c<sub>t</sub></i></b> = c˜<sub>t</sub> <b>.</b> i<sub>t</sub> + c<sub>t−1</sub> <b>.</b> f<sub>t</sub><br />
+<b><i>o<sub>t</sub></i></b> = σ(x<sub>t</sub> ∗ w<sub>xo</sub> + h<sub>t−1</sub> ∗ w<sub>ho</sub> + w<sub>obias</sub>)<br/>
+<b><i>h<sub>t</sub></i></b> = o<sub>t</sub> <b>.</b> tanh(c<sub>t</sub>)<br />
 
 
 
