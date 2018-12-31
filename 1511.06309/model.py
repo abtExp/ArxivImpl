@@ -115,7 +115,7 @@ class AutoEnc():
 							trainable=False
 						)
 					)
-					
+
 		optical_flow.add(utils.HuberLossLayer())
 
 		optical_flow.layers[2].trainable=False
@@ -123,7 +123,7 @@ class AutoEnc():
 		return optical_flow
 
 	def get_grid_generator(self):
-		gg = None
+		gg = utils.GridGen()
 
 		return gg
 	
