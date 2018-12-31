@@ -1,7 +1,7 @@
 # Spatio-Temporal Video Autoencoder With Differential Memory
 (arxiv:1511.06309)
 
-Read The Complete paper <a href='https://arxiv.org/abs/1511.06309'>here</a>
+Read The Complete paper <a href='https://arxiv.org/abs/1511.06309'>here</a><br />
 Torch code from the authors available <a href='https://github.com/viorik/ConvLSTM'>here</a>
 
 <br />
