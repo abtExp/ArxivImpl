@@ -1,4 +1,4 @@
-# Spatio-Temporal Video Autoencoder With Differential Memory
+# Spatio-Temporal Video Autoencoder With Differentiable Memory
 (arxiv:1511.06309)
 
 ```
