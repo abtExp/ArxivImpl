@@ -1,14 +1,16 @@
 # Spatio-Temporal Video Autoencoder With Differential Memory
 (arxiv:1511.06309)
 
-`@inproceedings{PatrauceanHC16,
+```
+@inproceedings{PatrauceanHC16,
   author    = {Viorica P{\u a}tr{\u a}ucean and
                Ankur Handa and
                Roberto Cipolla},
   title     = {Spatio-temporal video autoencoder with differentiable memory},
   booktitle = {International Conference on Learning Representations (ICLR) Workshop},
   year      = {2016}
-}`
+}
+```
 
 Read The Complete paper <a href='https://arxiv.org/abs/1511.06309'>here</a><br />
 Torch code from the authors available <a href='https://github.com/viorik/ConvLSTM'>here</a>
