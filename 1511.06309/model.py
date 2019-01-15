@@ -53,9 +53,9 @@ class SpatioTemporalAutoEncoder():
 		self.sampler = self.get_sampler()
 		self.spatial_decoder = self.get_spatial_decoder()
 
-		model = Model(inp, self.spatial_decoder.outputs)
+		model = Model(inputs=inp, outputs=self.spatial_decoder.outputs)
 		
-		return model
+		self.model = model
 
 	def get_spatial_encoder(self, inp):
 		x = Conv2D(
@@ -147,6 +147,9 @@ class SpatioTemporalAutoEncoder():
 	def compile(self):
 		self.model.compile(optimizer='rmsprop', loss=self.loss_function, metrics=['acc'])
 
+	def summary(self):
+		self.model.summary()
+
 	def train(self, train_x, train_y):
 		def schedule(epoch, lr):
 			if epoch%5 == 0:
@@ -159,3 +162,8 @@ class SpatioTemporalAutoEncoder():
 		lrschedule = LearningRateScheduler(schedule, verbose=0)
 
 		self.model.fit(train_x, train_y, epochs=20, batch_size=16 , callbacks=[checkpoint, earlystop, tensorboard, lrschedule])
+
+
+model = SpatioTemporalAutoEncoder()
+model.compose_model()
+model.summary()
