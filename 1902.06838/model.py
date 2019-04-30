@@ -110,7 +110,7 @@ class SCFEGAN():
 		inp = x
 		x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, dilation_rate=dilation, padding='same')(x)
 		if use_lrn:
-			x = LRNLayer()(x)
+			x = self.LRNLayer()(x)
 
 		if activation == 'leaky_relu':
 			x = LeakyReLU()(x)
@@ -125,7 +125,7 @@ class SCFEGAN():
 		return x, g
 
 	def GatedDeConv2D(self, x, out_shape, kernel_size=(5, 5), strides=(2, 2), std_dev=0.02):
-		return GatedDeConv(out_shape, kernel_size, strides, std_dev)(x)
+		return self.GatedDeConv(out_shape, kernel_size, strides, std_dev)(x)
 
 	def get_discriminator(self):
 		inp = Input(shape=self.vars.INP_SHAPE)
@@ -142,8 +142,6 @@ class SCFEGAN():
 		x = Conv2D(filters=256, kernel_size=(3, 3), strides=(2, 2), activation='relu')(x)
 
 		model = Model(inputs=inp, outputs=x)
-
-		model.summary()
 
 		# plot_model(model, './scfegan_dis.png', show_shapes=True)
 		return model
@@ -230,7 +228,7 @@ class SCFEGAN():
 
 		return sl
 
-	# TODO ( Test )
+	# TODO ( Test )(Skeptic about its correctness)
 	def total_variation_loss(self, completed):
 		tvl_row = [((completed[:,i+1, j, :] - completed[:,i,j, :])/np.shape(completed)[-1]) \
 				for i in range(np.shape(completed[1])) for j in range(np.shape(completed)[2])]
@@ -242,6 +240,7 @@ class SCFEGAN():
 
 		return tvl
 
+	# TODO
 	def gp_loss(self, masks):
 		data_point = np.random.rand(*self.vars.INP_SHAPE)
 		gpl = (np.multiply(self.discriminator_model(data_point), masks)**2 - 1)**2
