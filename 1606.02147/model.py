@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, './models')
 from keras.models import Model
 from keras.layers import Conv2D, BatchNormalization, Dropout, MaxPooling2D, Conv2DTranspose, Input, Concatenate, Add, UpSampling2D, ZeroPadding2D, SpatialDropout2D, Permute, Reshape, Activation, Softmax
 from keras.layers.advanced_activations import PReLU
@@ -15,15 +17,15 @@ from PIL import Image, ImageFile
 
 import gc
 
-class ENET():
-	def __init__(self, vars):
-		self.vars = vars
-		self.compose_model()
-		self.init_bootstrap_loaders()
+from base import BASE
 
-	def init_bootstrap_loaders(self):
-		self.train_loader = self.vars.DETECTOR_BOOTSTRAP_GENERATOR(self.vars.DETECTOR_ORIGINAL_BATCH_SIZE, self.vars.DETECTOR_BATCH_SIZE - self.vars.DETECTOR_ORIGINAL_BATCH_SIZE, self.vars)
-		self.valid_loader = self.vars.DETECTOR_BOOTSTRAP_GENERATOR(self.vars.DETECTOR_ORIGINAL_BATCH_SIZE, self.vars.DETECTOR_BATCH_SIZE - self.vars.DETECTOR_ORIGINAL_BATCH_SIZE, self.vars, mode='valid')
+class ENET(BASE):
+	def __init__(self, vars, model='enet', inp_shape=(None, None, 1)):
+		self.model_name = model
+		self.inp_shape = inp_shape
+		super(ENET, self).__init__(vars)
+
+		self.vars.DATA_LOADER = self.vars.ENET_DATA_LOADER
 
 	def compose_model(self):
 		# Initial Block
@@ -86,9 +88,6 @@ class ENET():
 		out = Activation('softmax')(out)
 
 		self.model = Model(inputs=inp, outputs=out)
-
-		plot_model(self.model, './model_images/enet.png', show_shapes=True, show_layer_names=True)
-
 
 	def RDDNeck(self, x, out_channels, down_flag, dilation=1, keep_probs=0.1, projection_ratio=4):
 
@@ -185,29 +184,3 @@ class ENET():
 		x = PReLU(shared_axes=[1,2])(x)
 
 		return x
-
-
-	def train(self, train_x, train_y):
-		print('Training on batch...')
-		self.model.train_on_batch(train_x, train_y)
-		print('Training on current batch completed!')
-
-	def summary(self):
-		self.model.summary()
-
-	def compile(self):
-		self.model.compile(optimizer=Adam(lr=5e-4, decay=2e-3),
-							loss='categorical_crossentropy')
-
-	def bootstrap(self):
-		directory = '{}/flikr/train'.format(self.vars.DETECTOR_TRAIN_DATA_PATH)
-		print('Training...')
-		# TODO apply the custom weighting scheme as used in the paper
-		callbacks = self.vars.get_callbacks('enet')
-		self.model.fit_generator(self.train_loader, steps_per_epoch=self.vars.DETECTOR_STEPS_PER_EPOCH, epochs=self.vars.DETECTOR_EPOCHS, callbacks=callbacks, workers=0, validation_data=self.valid_loader, initial_epoch=13, )
-
-		print('Model Bootstrapping Completed!')
-		self.model.save('./checkpoints/checkpoints_enet/final.hdf5')
-
-	def detect(self, frame):
-		return self.model.predict(frame)

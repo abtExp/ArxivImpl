@@ -1,3 +1,8 @@
+import sys
+sys.path.insert(0, './utils')
+
+from utils import load_valid_data
+
 import numpy as np
 import keras.backend as K
 import matplotlib.pyplot as plt
@@ -40,8 +45,6 @@ def get_preds_per_pixel(classes, probs, colors):
 
 	return image
 
-
-
 def plot(epoch, predicted_classes, probs_per_class, color_dict, mode='bw', plt_mode = 'classif'):
 	predicted_classes = predicted_classes[0]
 	if plt_mode == 'probs':
@@ -68,3 +71,7 @@ def plot(epoch, predicted_classes, probs_per_class, color_dict, mode='bw', plt_m
 
 	# plt.show()
 	return image
+
+def data_loader(vars, mode):
+	images, _, masks, _, _ = utils.load_valid_data(vars.SCFEGAN_DATA_INPUT_PATH, batch_size, vars=vars)
+	return images, masks

@@ -12,7 +12,7 @@ import os
 
 from os import listdir
 
-from utils import utils
+import utils
 
 class LRNLayer(Layer):
 	def __init__(self, alpha=1e-4, beta=0.75, k=2, n=5):
@@ -87,10 +87,9 @@ class GatedDeConv(Layer):
 	def compute_mask(self, input, input_mask=None):
 		return 2 * [None]
 
-def gen_inp(vars, dir=''):
+def data_loader(vars, mode='train'):
 	batch_size = vars.SCFEGAN_BATCH_SIZE
-	images, _, masks, _, boxes = utils.load_valid_data('./data/detector/train/flikr/train/', batch_size, vars=vars)
-	logo_dir = './data/detector/train/logos'
+	images, _, masks, _, boxes = utils.load_valid_data(vars.SCFEGAN_DATA_INPUT_PATH, batch_size, vars=vars)
 
 	# Removing the void class mask
 	masks = np.reshape(masks, (np.shape(masks)[0], vars.INP_SHAPE[0], vars.INP_SHAPE[1], vars.LOGO_NUM_CLASSES))

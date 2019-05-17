@@ -10,7 +10,8 @@ from lxml import etree
 
 import matplotlib.pyplot as plt
 
-from utils import kmeans, enet_utils
+import kmeans
+import enet_utils
 
 import gc
 
