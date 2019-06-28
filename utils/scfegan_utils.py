@@ -12,7 +12,6 @@ import os
 
 from os import listdir
 
-import utils
 
 class LRNLayer(Layer):
 	def __init__(self, alpha=1e-4, beta=0.75, k=2, n=5):
@@ -96,66 +95,3 @@ def create_mask(icoords, shape=(512, 512)):
 	# TODO
 
 	return mask
-
-def data_loader(vars, mode='train', mask_mode='detected'):
-	# if mask_mode == generate, use create_mask on every image
-
-	batch_size = vars.SCFEGAN_BATCH_SIZE
-	images, _, masks, _, boxes = utils.load_valid_data(vars.SCFEGAN_DATA_INPUT_PATH, batch_size, vars=vars)
-
-	# Removing the void class mask
-	masks = np.reshape(masks, (np.shape(masks)[0], vars.INP_SHAPE[0], vars.INP_SHAPE[1], vars.LOGO_NUM_CLASSES))
-	reversed_masks = masks[:,:,:,-1]
-	masks = masks[:,:,:,:-1]
-
-	detected_masks = [utils.generate_combined_mask(masks[i]) for i in range(np.shape(masks)[0])]
-
-	inputs = []
-	all_images = []
-
-	for i, image in enumerate(images):
-		input_image = np.array(image)
-		random_noise = np.zeros((np.shape(image)[0], np.shape(image)[1], 1))
-		random_noise = cv2.randn(random_noise, 0, 255)
-		random_noise = np.asarray(random_noise/255, dtype=np.uint8)
-
-		# Normalizing Input Image
-		input_image = cv2.resize(input_image, (vars.INP_SHAPE[0], vars.INP_SHAPE[1]))
-		input_image = (input_image / 127.5) - 1.
-
-		detected_mask = detected_masks[i]
-		reversed_mask = reversed_masks[i]
-
-		img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-		sketch = cv2.Canny(img, 100, 100)
-		sketch = np.multiply(detected_mask, sketch)
-
-		reversed_mask = np.expand_dims(reversed_mask, axis=-1)
-		detected_mask = np.expand_dims(detected_mask, axis=-1)
-		sketch = np.expand_dims(sketch, axis=-1)
-
-		input_image = np.multiply(reversed_mask, input_image)
-		random_noise = np.multiply(detected_mask, random_noise)
-
-		color = np.multiply(image, detected_mask)
-
-		# input_image = np.expand_dims(input_image, axis=0)
-		# random_noise = np.expand_dims(random_noise, axis=0)
-		# sketch = np.expand_dims(sketch, axis=0)
-		# color = np.expand_dims(color, axis=0)
-		# detected_mask = np.expand_dims(detected_mask, axis=0)
-
-		inp = np.concatenate(
-			[
-				input_image,
-				detected_mask,
-				sketch,
-				color,
-				random_noise
-			]
-		, axis=-1)
-
-		inputs.append(inp)
-		all_images.append(image)
-
-	return np.array(inputs), np.array(all_images)
