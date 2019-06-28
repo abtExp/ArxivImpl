@@ -175,9 +175,6 @@ MODEL_IMAGE_PATH = './model_images/'
 FACE_PRETRAINED_PATH = './checkpoints/checkpoints_face_vgg/wt.hdf5'
 # FACE_DATA_LOADER = FACE_DATA_LOADER
 
-ENET = {
-	loader = enet_utils.data_loader
-}
 
 def get_callbacks(model='enet', max_time=MAX_TIME):
 	if model == 'enet':

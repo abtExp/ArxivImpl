@@ -4,6 +4,7 @@ sys.path.insert(0, './utils')
 
 from base import BASE
 from scfegan_utils import *
+from data_loaders import SCFEGAN_DATA_LOADER
 
 import numpy as np
 
@@ -267,4 +268,3 @@ class SCFEGAN(BASE):
 
 			gen_imgs = self.generator.predict(inp)
 			cmp_imgs = self.complete_imgs(images, masks, gen_imgs)
-

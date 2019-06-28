@@ -87,7 +87,19 @@ class GatedDeConv(Layer):
 	def compute_mask(self, input, input_mask=None):
 		return 2 * [None]
 
-def data_loader(vars, mode='train'):
+
+# Create Random Masks Based On Eye Coords
+# Based On The Algorithm Mentioned In The Paper (Algorithm 1)
+def create_mask(icoords, shape=(512, 512)):
+	mask = np.zeros(shape)
+
+	# TODO
+
+	return mask
+
+def data_loader(vars, mode='train', mask_mode='detected'):
+	# if mask_mode == generate, use create_mask on every image
+
 	batch_size = vars.SCFEGAN_BATCH_SIZE
 	images, _, masks, _, boxes = utils.load_valid_data(vars.SCFEGAN_DATA_INPUT_PATH, batch_size, vars=vars)
 
