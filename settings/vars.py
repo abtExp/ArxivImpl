@@ -15,7 +15,7 @@ from utilities import *
 from scfegan_utils import *
 
 # GLOBALS
-INP_SHAPE = (512, 512, 3)
+INP_SHAPE = (256, 256, 3)
 
 TRAIN_EPOCHS = 100
 TRAIN_BATCH_SIZE = 16
@@ -240,9 +240,9 @@ BEST_ANCHORS_256 = [[0.59,0.42], [1.61,1.91], [1.71,0.76], [4.17,2.20], [8.44,3.
 BEST_ANCHORS = np.reshape(BEST_ANCHORS_256,[-1])
 
 # for cloud training change it to the data source bucket id and stream data from it
-# DETECTOR_TRAIN_DATA_PATH = '/floyd/input/detector/detector/train'
-DETECTOR_TRAIN_DATA_PATH = 'D:/morpheus/data/detector/train/flikr/train'
-DETECTOR_TEST_DATA_PATH = 'D:/morpheus/data/detector/test/logo+/'
+DETECTOR_TRAIN_DATA_PATH = '/floyd/input/detector/detector/train'
+# DETECTOR_TRAIN_DATA_PATH = 'D:/morpheus/data/detector/train/flikr/train'
+# DETECTOR_TEST_DATA_PATH = 'D:/morpheus/data/detector/test/logo+/'
 DETECTOR_TEST_BATCH_SIZE = 25
 DETECTOR_GET_BEST_ANCHOR_BOXES = get_best_anchor_boxes
 DETECTOR_MASK_GENERATOR = generate_mask
@@ -265,7 +265,7 @@ GAN_DATA_LOADER = gen_loader
 GEN_LOADER_TEST_BATCH_SIZE = 10
 
 SCFEGAN_BATCH_SIZE = 2
-SCFEGAN_TRAIN_EPOCHS = 1000
+SCFEGAN_TRAIN_EPOCHS = 10000
 SCFEGAN_SIGMA = 5e-2
 SCFEGAN_BETA = 1e-3
 SCFEGAN_GAMMA = 120
@@ -276,29 +276,31 @@ SCFEGAN_DISC_OP_SIZE = (4, 4, 256)
 LRN_LAYER = LRNLayer
 GATED_DE_CONV = GatedDeConv
 
+LOG_EPOCH = 10
+
 MODEL_IMAGE_PATH = 'model_images/'
 
-def get_callbacks(model='enet'):
-	all_checks = listdir('./checkpoints/')
-	counter = 0
-	max = -1
+# def get_callbacks(model='enet'):
+# 	all_checks = listdir('./checkpoints/')
+# 	counter = 0
+# 	max = -1
 
-	for folder in all_checks:
-			if 'checkpoints_{}'.format(model) in folder:
-					if int(folder[folder.rindex('_')+1:]) > max:
-							max = int(folder[folder.rindex('_')+1:])
+# 	for folder in all_checks:
+# 			if 'checkpoints_{}'.format(model) in folder:
+# 					if int(folder[folder.rindex('_')+1:]) > max:
+# 							max = int(folder[folder.rindex('_')+1:])
 
-	counter = max+1
-	check_path = './checkpoints/checkpoints_{}_{}/'.format(model, counter)
-	logs_path = './logs/logs_{}_{}/'.format(model, counter)
+# 	counter = max+1
+# 	check_path = './checkpoints/checkpoints_{}_{}/'.format(model, counter)
+# 	logs_path = './logs/logs_{}_{}/'.format(model, counter)
 
-	if not isdir(check_path) and not isdir(logs_path):
-			mkdir(check_path)
-			mkdir(logs_path)
-			print('Created Dirs for checks and logs')
-	checkpoint = ModelCheckpoint(check_path+'weights.{epoch:02d}-{loss:.2f}.hdf5', monitor='loss', verbose=0, save_best_only=True)
-	# earlystop = EarlyStopping(monitor='loss', min_delta=0, patience=3, verbose=0)
-	tensorboard = TensorBoard(log_dir=logs_path, histogram_freq=0, batch_size=32, write_graph=True, write_grads=True, write_images=True)
-	reducelr = ReduceLROnPlateau(monitor='loss', factor=0.02, patience=1, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
+# 	if not isdir(check_path) and not isdir(logs_path):
+# 			mkdir(check_path)
+# 			mkdir(logs_path)
+# 			print('Created Dirs for checks and logs')
+# 	checkpoint = ModelCheckpoint(check_path+'weights.{epoch:02d}-{loss:.2f}.hdf5', monitor='loss', verbose=0, save_best_only=True)
+# 	# earlystop = EarlyStopping(monitor='loss', min_delta=0, patience=3, verbose=0)
+# 	tensorboard = TensorBoard(log_dir=logs_path, histogram_freq=0, batch_size=32, write_graph=True, write_grads=True, write_images=True)
+# 	reducelr = ReduceLROnPlateau(monitor='loss', factor=0.02, patience=1, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
 
-	return [checkpoint, tensorboard, reducelr]
+# 	return [checkpoint, tensorboard, reducelr]

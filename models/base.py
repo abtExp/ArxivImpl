@@ -8,7 +8,7 @@ class BASE():
 
 	def train(self):
 		self.init_loaders()
-		self.model.fit_generator(self.train_loader, validation_data=self.valid_loader, epochs=self.vars.TRAIN_EPOCHS, callbacks=self.vars.get_callbacks(self.model_name))
+		self.model.fit_generator(self.train_loader, validation_data=self.valid_loader, epochs=self.vars.TRAIN_EPOCHS)
 
 	def save(self, path):
 		self.model.save(path)

@@ -19,6 +19,13 @@ from keras.layers import Conv2D, Conv2DTranspose, Activation, Dense, BatchNormal
 						Reshape, Input, Concatenate, Flatten, MaxPooling2D, multiply,    \
 						LeakyReLU, Dropout, UpSampling2D, ZeroPadding2D, Lambda, Multiply
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
+
+K.set_session(session)
+
+
 class SCFEGAN(BASE):
 	def __init__(self, vars, model='scfegan', inp_shape=(None, None, 1)):
 		self.inp_shape = inp_shape
@@ -38,22 +45,6 @@ class SCFEGAN(BASE):
 
 		self.discriminator.compile(loss=self.disc_loss, optimizer=Adam())
 		self.generator.compile(loss=self.gen_loss, optimizer=Adam())
-
-		inp = Input(shape=(self.vars.INP_SHAPE[0], self.vars.INP_SHAPE[1], 9))
-
-		gen, _ = self.generator(inp)
-
-		# comp = self.complete_imgs(inp[0], inp[1], gen)
-
-		self.discriminator.trainable=False
-
-		res = self.discriminator(gen)
-
-		model = Model(inputs=inp, outputs=res)
-
-		model.compile(loss='binary_crossentropy', optimizer=Adam())
-
-		return model
 
 	def get_generator(self):
 		# Generator will take in the patched image, mask, sketch info, color_info and random noise
@@ -102,7 +93,7 @@ class SCFEGAN(BASE):
 
 		x14 = Activation('tanh')(x14)
 
-		model = Model(inputs=inp, outputs=[x14, mask14])
+		model = Model(inputs=inp, outputs=x14)
 
 		return model
 
@@ -146,7 +137,6 @@ class SCFEGAN(BASE):
 	def GatedDeConv2D(self, x, out_shape, kernel_size=(5, 5), strides=(2, 2), std_dev=0.02):
 		return self.GatedDeConv(out_shape, kernel_size, strides, std_dev)(x)
 
-	# ! Test
 	def complete_imgs(self, images, masks, generated):
 		completed_images = np.zeros(np.shape(images))
 
@@ -166,10 +156,11 @@ class SCFEGAN(BASE):
 		return y_true - y_pred
 
 	# ! Test
-	def generator_loss_function(self, images, generated, masks):
-		cmp_images = self.complete_imgs(np.array(images), masks, generated)
+	def generator_loss_function(self, images, generated):
 
-		ppxl_loss = self.per_pixel_loss(images, generated, masks, self.vars.SCFEGAN_ALPHA)
+		cmp_images = self.complete_imgs(np.array(images), self.masks, generated)
+
+		ppxl_loss = self.per_pixel_loss(images, generated, self.masks, self.vars.SCFEGAN_ALPHA)
 		perc_loss = self.perceptual_loss(images, generated, cmp_images)
 		g_sn_loss = self.gsn_loss(cmp_images)
 		sg_loss = self.style_loss(generated)
@@ -184,8 +175,8 @@ class SCFEGAN(BASE):
 		return g_loss
 
 	# ! Test
-	def discriminator_loss_function(self, images, completed, masks):
-		loss = (1 - images) + (1 + completed) + self.vars.SCFEGAN_THETA * self.gp_loss(masks)
+	def discriminator_loss_function(self, images, completed):
+		loss = (1 - images) + (1 + completed) + self.vars.SCFEGAN_THETA * self.gp_loss(self.masks)
 		return loss
 
 	# ! Test
@@ -260,13 +251,42 @@ class SCFEGAN(BASE):
 		return -1 * self.discriminator_model(completed)
 
 	def train(self):
-		for e in range(self.vars.TRAIN_EPOCHS):
-			inp, images = scfegan_data_loader(self.vars)
+		for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
 
-			masks = inp[1]
+			x, y = scfegan_data_loader(self.vars)
+			print('Loaded Generator Data')
+
+			masks = np.array(x[1])
+
 			self.masks = masks
-			valid = np.ones(self.vars.DISC_OP_SHAPE)
-			fake = np.zeros(self.vars.DISC_OP_SHAPE)
 
-			gen_imgs = self.generator.predict(inp)
-			cmp_imgs = self.complete_imgs(images, masks, gen_imgs)
+			gen_loss = self.generator.train_on_batch(x, y)
+
+			print('Trained Generator On 1 Batch')
+
+			x_, y_ = scfegan_data_loader(self.vars)
+
+			print('Loaded Discriminator Data')
+
+			generated = self.generator.predict(x_)
+
+			print('Got Generator Predictions')
+
+			self.masks = np.array(x_[0])
+
+			completed = self.complete_imgs(y_, x_[0], x_)
+
+			valid = np.ones(self.vars.SCFEGAN_DISC_OP_SHAPE)
+			fakes = np.zeros(self.vars.SCFEGAN_DISC_OP_SHAPE)
+
+			disc_loss_1 = self.discriminator.train_on_batch(y_, valid)
+			print('Trained On Valid Batch')
+			disc_loss_2 = self.discriminator.train_on_batch(completed, fakes)
+			print('Trained On Fake Batch')
+
+			print('GENERATOR LOSS : {}, DISCRIMINATOR_LOSS : {}'.format(gen_loss, (disc_loss_1+disc_loss_2)/2))
+
+			if e % self.vars.LOG_EPOCH == 0:
+				print('SAVING : {}'.format(e))
+				self.generator.save('./checkpoints/scfegan/generator_{}_{}.hdf5'.format(e, gen_loss))
+				self.discriminator.save('./checkpoints/scfegan/discriminator_{}_{}.hdf5'.format(e, (disc_loss_1+disc_loss_2)/2))
