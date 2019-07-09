@@ -10,6 +10,8 @@ import cv2
 
 import os
 
+import math
+
 from os import listdir
 
 
@@ -87,11 +89,49 @@ class GatedDeConv(Layer):
 		return 2 * [None]
 
 
-# Create Random Masks Based On Eye Coords
+def create_sketch():
+	return sketch
+
+# TODO : Create Hair Mask
+def get_hair_mask():
+	return np.zeros((256, 256), dtype=np.int32)
+
 # Based On The Algorithm Mentioned In The Paper (Algorithm 1)
-def create_mask(icoords, shape=(512, 512)):
+def create_mask(max_draws=10, max_len=50, max_angle=60, max_lines=100, shape=(256, 256)):
 	mask = np.zeros(shape)
 
-	# TODO
+	num_lines = np.random.randint(0, max_draws)
+
+	for i in range(0, num_lines):
+		start_x = np.random.randint(0, shape[0])
+		start_y = np.random.randint(0, shape[1])
+		start_angle = np.random.randint(0, 360)
+		num_vertices = np.random.randint(0, max_lines)
+
+		for j in range(0, num_vertices):
+			angle_change = np.random.randint(-max_angle, max_angle)
+			if j%2 == 0:
+				angle = start_angle + angle_change
+			else:
+				angle = start_angle + angle_change + 180
+
+
+			length = np.random.randint(0, max_len)
+
+			end_x = start_x+int(length * math.cos(math.radians(angle)))
+			end_y = start_y+int(length * math.sin(math.radians(angle)))
+
+			mask = cv2.line(mask, (start_x, start_y), (end_x, end_y), (255, 255, 255), 10)
+
+			start_x = end_x
+			start_y = end_y
+
+		# TODO : Draw Eye Mask Randomly
+
+	mask = np.array(mask, dtype='int32')
+
+	if np.random.randint(0, 10) > 5:
+		hair_mask = get_hair_mask()
+		mask += hair_mask
 
 	return mask
