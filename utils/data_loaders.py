@@ -90,9 +90,13 @@ def load_valid_data(dir, batch_size, format='txt', mode='mask', vars={}, debug=F
 	nb_anchors = len(vars.BEST_ANCHORS)//2
 	anchors = [BBOX((0, 0, vars.BEST_ANCHORS[2*i], vars.BEST_ANCHORS[2*i+1])) for i in range(int(len(vars.BEST_ANCHORS)//2))]
 
+	print(dir)
+
 	all_label_files = [file for file in listdir(dir) if file.endswith(format)]
 	all_img_files = [image for image in listdir(dir) if image.endswith('.png')]
 	all_mask_files = [mask for mask in listdir(dir) if 'mask' in mask]
+
+	print(all_label_files)
 
 	labels = []
 	images = []

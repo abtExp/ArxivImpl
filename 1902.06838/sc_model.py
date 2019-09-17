@@ -19,6 +19,8 @@ from keras.layers import Conv2D, Conv2DTranspose, Activation, Dense, BatchNormal
 						Reshape, Input, Concatenate, Flatten, MaxPooling2D, multiply,    \
 						LeakyReLU, Dropout, UpSampling2D, ZeroPadding2D, Lambda, Multiply
 
+from keras.utils import plot_model
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
@@ -40,7 +42,7 @@ class SCFEGAN(BASE):
 	def compose_model(self):
 		self.discriminator = self.get_discriminator()
 		self.generator = self.get_generator()
-		self.feature_extractor = VGG16(input_shape=(256, 256, 3), include_top=False, weights='imagenet')
+		self.feature_extractor = VGG16(input_shape=(512, 512, 3), include_top=False, weights='imagenet')
 		self.feature_extractor.trainable = False
 
 		self.discriminator.compile(loss=self.disc_loss, optimizer=Adam())
@@ -97,8 +99,8 @@ class SCFEGAN(BASE):
 
 		return model
 
-	def get_discriminator(self):
-		inp = Input(shape=self.vars.INP_SHAPE)
+	def get_discriminator(self):						# inp_image+mask+channels
+		inp = Input(shape=tuple(self.vars.INP_SHAPE[:2])+(3+1+3,))
 		x = Conv2D(filters=64, kernel_size=(3, 3), strides=(2, 2), activation='relu')(inp)
 		x = ZeroPadding2D(padding=(1, 1))(x)
 		x = Conv2D(filters=128, kernel_size=(3, 3), strides=(2, 2), activation='relu')(x)
@@ -181,37 +183,34 @@ class SCFEGAN(BASE):
 
 	# ! Test
 	def extract_features(self, x):
-		feature_extractor = self.feature_extractor
-		activations = feature_extractor(x)
+		activations = self.feature_extractor(x)
 		nf = []
 		outputs = []
 
-		for layer in feature_extractor.layers:
+		for layer in self.feature_extractor.layers:
 			if layer.name in ["block1_pool", "block2_pool", "block3_pool"]:
 				nf.append(np.prod(K.shape(layer.get_weights())))
 				outputs.append(layer.output)
 
 		return outputs, nf
 
-	# ! Test
-	def per_pixel_loss(self, images, generated, masks, alpha):
-		nf = np.prod(np.shape(images[0]))
+	def per_pixel_loss(self, grount_truth, generated, mask, alpha):
+		nf = np.prod(np.shape(grount_truth[0]))
 
-		t1 = (np.multiply(masks, np.subtract(generated, images)))/nf
-		t2 = (np.multiply((1 - masks), np.subtract(generated, images)))/nf
+		t1 = (np.multiply(mask, np.subtract(generated, grount_truth)))/nf
+		t2 = (np.multiply((1 - mask), np.subtract(generated, grount_truth)))/nf
 
 		ppl = t1 + alpha * t2
 
 		return ppl
 
-	# ! Test
 	def perceptual_loss(self, images, generated, completed):
 		gt_activs, nf = self.extract_features(images)
 		gen_activs, _ = self.extract_features(generated)
 		cmp_activs, _ = self.extract_features(completed)
 
-		t1 = np.sum((np.subtract(gen_activs, gt_activs))/nf)
-		t2 = np.sum((np.subtract(cmp_activs, gt_activs))/nf)
+		t1 = (np.sum(np.subtract(gen_activs, gt_activs))/nf)
+		t2 = (np.sum(np.subtract(cmp_activs, gt_activs))/nf)
 
 		pl = t1 + t2
 		return pl
@@ -231,17 +230,25 @@ class SCFEGAN(BASE):
 
 	# ! Test
 	def total_variation_loss(self, completed):
-		tvl_row = [((completed[:,i+1, j, :] - completed[:,i,j, :])/np.size(completed)) \
-				for i in range(np.shape(completed[1])) for j in range(np.shape(completed)[2])]
+		# Obtaining only the removed region
+		completed = self.masks * completed
 
-		tvl_col = [((completed[:,i, j+1, :] - completed[:,i,j, :])/np.size(completed)) \
-		for i in range(np.shape(completed[1])) for j in range(np.shape(completed)[2])]
+		region = np.where(completed != 0)
+
+		tvl_row = [((region[:,i+1, j, :] - region[:,i,j, :])/np.size(completed)) \
+				for i in range(np.shape(region[1])) for j in range(np.shape(region)[2])]
+
+		tvl_col = [((region[:,i, j+1, :] - region[:,i,j, :])/np.size(completed)) \
+		for i in range(np.shape(region[1])) for j in range(np.shape(region)[2])]
 
 		tvl = tvl_row + tvl_col
 
 		return tvl
 
-	# ! Test
+	#TODO : Have To Implement The Gradient Step as there's no way to get the
+	#gradient out of the graph in keras, might have to implement an end
+	#to end loss and use the grads. ( Have To Read More On This To Make This
+	#Possible )
 	def gp_loss(self, masks):
 		data_point = np.random.rand(*self.vars.INP_SHAPE)
 		gpl = (np.sqrt(np.multiply(grad(self.discriminator_model(data_point)), masks)) - 1)**2
@@ -249,6 +256,14 @@ class SCFEGAN(BASE):
 
 	def gsn_loss(self, completed):
 		return -1 * self.discriminator_model(completed)
+
+	def summary(self):
+		self.generator.summary()
+		self.discriminator.summary()
+
+	def plot(self):
+		plot_model(self.generator, self.vars.MODEL_IMAGE_PATH+'generator.png', show_shapes=True)
+		plot_model(self.discriminator, self.vars.MODEL_IMAGE_PATH+'discriminator.png', show_shapes=True)
 
 	def train(self):
 		for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
