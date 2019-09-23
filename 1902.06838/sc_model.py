@@ -21,12 +21,13 @@ from keras.layers import Conv2D, Conv2DTranspose, Activation, Dense, BatchNormal
 
 from keras.utils import plot_model
 
+import tensorflow as tf
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 
 K.set_session(session)
-
 
 class SCFEGAN(BASE):
 	def __init__(self, vars, model='scfegan', inp_shape=(None, None, 1)):
@@ -157,9 +158,8 @@ class SCFEGAN(BASE):
 	def disc_loss(self, y_true, y_pred):
 		return y_true - y_pred
 
-	# ! Test
+	# ! Test 						     gen, gt
 	def generator_loss_function(self, images, generated):
-
 		cmp_images = self.complete_imgs(np.array(images), self.masks, generated)
 
 		ppxl_loss = self.per_pixel_loss(images, generated, self.masks, self.vars.SCFEGAN_ALPHA)
@@ -176,9 +176,9 @@ class SCFEGAN(BASE):
 
 		return g_loss
 
-	# ! Test
+	# ! Test 								y_true , y_pred
 	def discriminator_loss_function(self, images, completed):
-		loss = (1 - images) + (1 + completed) + self.vars.SCFEGAN_THETA * self.gp_loss(self.masks)
+		loss = (1 - images) + (1 + completed) + self.vars.SCFEGAN_THETA * self.gp_loss(images, completed)
 		return loss
 
 	# ! Test
@@ -245,13 +245,24 @@ class SCFEGAN(BASE):
 
 		return tvl
 
-	#TODO : Have To Implement The Gradient Step as there's no way to get the
-	#gradient out of the graph in keras, might have to implement an end
-	#to end loss and use the grads. ( Have To Read More On This To Make This
-	#Possible )
-	def gp_loss(self, masks):
-		data_point = np.random.rand(*self.vars.INP_SHAPE)
-		gpl = (np.sqrt(np.multiply(grad(self.discriminator_model(data_point)), masks)) - 1)**2
+	def gp_loss(self, gt, comp):
+		# activation = self.discriminator(data_point)
+		data_point_selector = np.random.rand()
+		if data_point_selector < 0.5:
+			data_point = gt
+		else:
+			data_point = comp
+
+		wts = self.discriminator.trainable_weights
+
+		grads = K.gradients(data_point, wts)
+
+		gpl = (np.sqrt(np.multiply(grads, self.masks)) - 1)**2
+
+		with tf.default_session() as sess:
+			sess.run(tf.initialize_all_variables())
+			sess.run(gpl)
+
 		return gpl
 
 	def gsn_loss(self, completed):
@@ -264,6 +275,42 @@ class SCFEGAN(BASE):
 	def plot(self):
 		plot_model(self.generator, self.vars.MODEL_IMAGE_PATH+'generator.png', show_shapes=True)
 		plot_model(self.discriminator, self.vars.MODEL_IMAGE_PATH+'discriminator.png', show_shapes=True)
+
+	def save(self):
+		self.generator.save(self.vars.CHECKPOINTS_PATH+'generator.hdf5')
+		self.discriminator.save(self.vars.CHECKPOINTS_PATH+'discriminator.hdf5')
+
+	# Create The Logger And The Progress Bars For Tracking Performance
+	def train_(self):
+		for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
+
+			x, y = scfegan_data_loader(self.vars)
+
+			self.masks = np.array(x[1])
+
+			generator_loss = self.generator.train_on_batch(x, y)
+
+			x_, y_ = scfegan_data_loader(self.vars)
+
+			self.masks = np.array(x_[1])
+
+			generated = self.generator(x_)
+
+			completed = self.complete_imgs(y_, self.masks, generated)
+
+			# Discriminator expects the incomplete image, the masks, and the
+			# channels as input
+			y_ = np.array(x[:3])
+
+			x_ = self.discriminator(completed)
+
+			discriminator_loss = self.discriminator.train_on_batch(x_, y_)
+
+			print('generator_loss : {.%2f} discriminator_loss : {%2f}'.format(generator_loss, discriminator_loss))
+
+			if e%self.vars.LOG_EPOCH == 0:
+				self.save()
+
 
 	def train(self):
 		for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
@@ -287,7 +334,7 @@ class SCFEGAN(BASE):
 
 			print('Got Generator Predictions')
 
-			self.masks = np.array(x_[0])
+			self.masks = np.array(x_[1])
 
 			completed = self.complete_imgs(y_, x_[0], x_)
 
@@ -299,7 +346,7 @@ class SCFEGAN(BASE):
 			disc_loss_2 = self.discriminator.train_on_batch(completed, fakes)
 			print('Trained On Fake Batch')
 
-			print('GENERATOR LOSS : {}, DISCRIMINATOR_LOSS : {}'.format(gen_loss, (disc_loss_1+disc_loss_2)/2))
+			print('GENERATOR_LOSS : {}, DISCRIMINATOR_LOSS : {}'.format(gen_loss, (disc_loss_1+disc_loss_2)/2))
 
 			if e % self.vars.LOG_EPOCH == 0:
 				print('SAVING : {}'.format(e))

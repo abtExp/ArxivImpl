@@ -242,76 +242,119 @@ def enet_data_loader(vars, mode):
 	return images, masks
 
 
-def scfegan_data_loader(vars, mode='train', mask_mode='create'):
-	# if mask_mode == generate, use create_mask on every image
+def scfegan_data_loader(vars):
+	all_files = listdir(vars.SCFEGAN_DATA_INPUT_PATH)
+	inps = []
+	ops = []
 
-	batch_size = vars.SCFEGAN_BATCH_SIZE
-	images, _, masks, _, boxes = load_valid_data(vars.SCFEGAN_DATA_INPUT_PATH, batch_size, vars=vars)
+	for file in all_files:
+		image = cv2.imread(vars.SCFEGAN_DATA_INPUT_PATH+file)
+		image = cv2.resize(image, vars.SCFEGAN_INP_SHAPE)
 
-	# Removing the void class mask
+		mask = create_mask(image)
 
-	if mask_mode == 'detected':
-		masks = np.reshape(masks, (np.shape(masks)[0], vars.INP_SHAPE[0], vars.INP_SHAPE[1], vars.LOGO_NUM_CLASSES))
-		reversed_masks = masks[:,:,:,-1]
-		masks = masks[:,:,:,:-1]
+		mask = np.expand_dims(mask, axis=-1)
 
-		detected_masks = [generate_combined_mask(masks[i]) for i in range(np.shape(masks)[0])]
+		reversed_mask = np.logical_not(mask).astype(np.int32)
 
-	inputs = []
-	all_images = []
+		incomplete_image = np.multiply(reversed_mask, image)
 
-	for i, image in enumerate(images):
-		input_image = np.array(image)
-		cv2.imwrite('./input.jpg', input_image)
 		random_noise = np.zeros((np.shape(image)[0], np.shape(image)[1], 1))
 		random_noise = cv2.randn(random_noise, 0, 255)
 		random_noise = np.asarray(random_noise/255, dtype=np.uint8)
 
-		# Normalizing Input Image
-		input_image = cv2.resize(input_image, (vars.INP_SHAPE[0], vars.INP_SHAPE[1]))
-		input_image = (input_image / 127.5) - 1.
-
-		if mask_mode == 'detected':
-			detected_mask = detected_masks[i]
-			reversed_mask = reversed_masks[i]
-		else:
-			detected_mask = np.array(create_mask()/255, dtype=np.int32)
-			reversed_mask = np.logical_not(detected_mask).astype(np.int32)
-
-		cv2.imwrite('./mask.jpg', detected_mask*255)
-		cv2.imwrite('./reversed_mask.jpg', reversed_mask*255)
-
 		img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 		sketch = cv2.Canny(img, 200, 200)
-		sketch = np.multiply(detected_mask, sketch)
-
-		cv2.imwrite('./sketch.jpg', sketch)
-
-		reversed_mask = np.expand_dims(reversed_mask, axis=-1)
-		detected_mask = np.expand_dims(detected_mask, axis=-1)
 		sketch = np.expand_dims(sketch, axis=-1)
+		sketch = np.multiply(mask, sketch)
 
-		input_image = np.multiply(reversed_mask, input_image)
-		random_noise = np.multiply(detected_mask, random_noise)
-
-		color = np.multiply(image, detected_mask)
-		cv2.imwrite('./color.jpg', color)
-		cv2.imwrite('./noise.jpg', random_noise)
+		color = np.multiply(image, mask)
 
 		inp = np.concatenate(
 			[
-				input_image,
-				detected_mask,
+				incomplete_image,
+				mask,
 				sketch,
 				color,
 				random_noise
 			]
 		, axis=-1)
 
-		inputs.append(inp)
-		all_images.append(image)
+		inps.append(inp)
+		ops.append(image)
 
-	return np.array(inputs), np.array(all_images)
+	return np.array(inps), np.array(ops)
+
+# def scfegan_data_loader(vars, mode='train', mask_mode='create'):
+# 	# if mask_mode == create, use create_mask on every image
+
+# 	batch_size = vars.SCFEGAN_BATCH_SIZE
+# 	images, _, masks, _, boxes = load_valid_data(vars.SCFEGAN_DATA_INPUT_PATH, batch_size, vars=vars)
+
+# 	# Removing the void class mask
+
+# 	if mask_mode == 'detected':
+# 		masks = np.reshape(masks, (np.shape(masks)[0], vars.INP_SHAPE[0], vars.INP_SHAPE[1], vars.LOGO_NUM_CLASSES))
+# 		reversed_masks = masks[:,:,:,-1]
+# 		masks = masks[:,:,:,:-1]
+
+# 		detected_masks = [generate_combined_mask(masks[i]) for i in range(np.shape(masks)[0])]
+
+# 	inputs = []
+# 	all_images = []
+
+# 	for i, image in enumerate(images):
+# 		input_image = np.array(image)
+# 		cv2.imwrite('./input.jpg', input_image)
+# 		random_noise = np.zeros((np.shape(image)[0], np.shape(image)[1], 1))
+# 		random_noise = cv2.randn(random_noise, 0, 255)
+# 		random_noise = np.asarray(random_noise/255, dtype=np.uint8)
+
+# 		# Normalizing Input Image
+# 		input_image = cv2.resize(input_image, (vars.INP_SHAPE[0], vars.INP_SHAPE[1]))
+# 		input_image = (input_image / 127.5) - 1.
+
+# 		if mask_mode == 'detected':
+# 			detected_mask = detected_masks[i]
+# 			reversed_mask = reversed_masks[i]
+# 		else:
+# 			detected_mask = np.array(create_mask()/255, dtype=np.int32)
+# 			reversed_mask = np.logical_not(detected_mask).astype(np.int32)
+
+# 		cv2.imwrite('./mask.jpg', detected_mask*255)
+# 		cv2.imwrite('./reversed_mask.jpg', reversed_mask*255)
+
+# 		img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+# 		sketch = cv2.Canny(img, 200, 200)
+# 		sketch = np.multiply(detected_mask, sketch)
+
+# 		cv2.imwrite('./sketch.jpg', sketch)
+
+# 		reversed_mask = np.expand_dims(reversed_mask, axis=-1)
+# 		detected_mask = np.expand_dims(detected_mask, axis=-1)
+# 		sketch = np.expand_dims(sketch, axis=-1)
+
+# 		input_image = np.multiply(reversed_mask, input_image)
+# 		random_noise = np.multiply(detected_mask, random_noise)
+
+# 		color = np.multiply(image, detected_mask)
+# 		cv2.imwrite('./color.jpg', color)
+# 		cv2.imwrite('./noise.jpg', random_noise)
+
+# 		inp = np.concatenate(
+# 			[
+# 				input_image,
+# 				detected_mask,
+# 				sketch,
+# 				color,
+# 				random_noise
+# 			]
+# 		, axis=-1)
+
+# 		inputs.append(inp)
+# 		all_images.append(image)
+
+# 	return np.array(inputs), np.array(all_images)
 
 
 def get_sketch(mask):

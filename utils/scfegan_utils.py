@@ -10,6 +10,8 @@ import cv2
 
 import os
 
+import face_recognition
+
 import math
 
 from os import listdir
@@ -97,41 +99,47 @@ def get_hair_mask():
 	return np.zeros((256, 256), dtype=np.int32)
 
 # Based On The Algorithm Mentioned In The Paper (Algorithm 1)
-def create_mask(max_draws=10, max_len=50, max_angle=60, max_lines=100, shape=(256, 256)):
-	mask = np.zeros(shape)
+def create_mask(img, max_draws=10, max_len=50, max_angle=60, max_lines=10, shape=(256, 256)):
+	mask_panel = np.zeros(shape)
 
 	num_lines = np.random.randint(0, max_draws)
 
-	for i in range(0, num_lines):
-		start_x = np.random.randint(0, shape[0])
-		start_y = np.random.randint(0, shape[1])
-		start_angle = np.random.randint(0, 360)
-		num_vertices = np.random.randint(0, max_lines)
+	bbox = face_recognition.face_locations(img)[0]
 
-		for j in range(0, num_vertices):
-			angle_change = np.random.randint(-max_angle, max_angle)
-			if j%2 == 0:
-				angle = start_angle + angle_change
-			else:
-				angle = start_angle + angle_change + 180
+	if len(bbox) > 0:
+		mask = np.zeros((bbox[1]-bbox[3], bbox[2]-bbox[0]))
 
+		for i in range(0, num_lines):
+			start_x = np.random.randint(0, bbox[2]-bbox[0])
+			start_y = np.random.randint(0, bbox[1]-bbox[3])
+			start_angle = np.random.randint(0, 360)
+			num_vertices = np.random.randint(0, max_lines)
 
-			length = np.random.randint(0, max_len)
+			for j in range(0, num_vertices):
+				angle_change = np.random.randint(-max_angle, max_angle)
+				if j%2 == 0:
+					angle = start_angle + angle_change
+				else:
+					angle = start_angle + angle_change + 180
 
-			end_x = start_x+int(length * math.cos(math.radians(angle)))
-			end_y = start_y+int(length * math.sin(math.radians(angle)))
+				length = np.random.randint(0, max_len)
 
-			mask = cv2.line(mask, (start_x, start_y), (end_x, end_y), (255, 255, 255), 10)
+				end_x = start_x+int(length * math.cos(math.radians(angle)))
+				end_y = start_y+int(length * math.sin(math.radians(angle)))
 
-			start_x = end_x
-			start_y = end_y
+				mask = cv2.line(mask, (start_x, start_y), (end_x, end_y), (255, 255, 255), 10)
 
-		# TODO : Draw Eye Mask Randomly
+				start_x = end_x
+				start_y = end_y
 
-	mask = np.array(mask, dtype='int32')
+		mask = np.array(mask, dtype='int32')
+		mask_panel[bbox[3]:bbox[1], bbox[0]:bbox[2]] = mask[:,:]
 
-	if np.random.randint(0, 10) > 5:
-		hair_mask = get_hair_mask()
-		mask += hair_mask
+		# if np.random.randint(0, 10) > 5:
+		# 	hair_mask = get_hair_mask()
+		# 	mask += hair_mask
 
-	return mask
+		return mask_panel
+
+	else:
+		return
