@@ -5,16 +5,14 @@ from keras.callbacks import TensorBoard, EarlyStopping, LearningRateScheduler, M
 from keras.initializers import glorot_uniform, RandomUniform
 import keras.backend as K
 
-from ..utils.venc_utils import utils
-
+import tensorflow as tf
 import numpy as np
 
 import cv2 as cv
 from PIL import Image
 
 
-# Defining Class
-class SpatioTemporalAutoEncoder():
+class STEMPENC():
 	def __init__(self):
 		self.spatial_filters = 16
 		self.spatial_filter_size = 7
@@ -110,11 +108,10 @@ class SpatioTemporalAutoEncoder():
 
 		return optical_flow
 
-	def get_grid_generator(self):
-		gg = utils.grid_generator(*np.shape(self.spatial_encoder.inputs)[1:3])
-		# Have To Create A Tensor Object To Keep The Flow Graph Consistent
-
-		return gg
+	def get_grid_generator(self, h, w):
+		grid = np.zeros((h, w, 3))
+		# Create Grid Generator and Transform Matrix Generator Based On STN model
+		return grid
 
 	def get_sampler(self):
 		sampler = None
@@ -137,10 +134,16 @@ class SpatioTemporalAutoEncoder():
 
 		return spatial_decoder
 
+	def huber_loss(self, del_t, delta=1.0):
+		cond  = K.abs(del_t) < delta
+		squared_loss = 0.5 * K.square(del_t)
+		linear_loss  = delta * (K.abs(del_t) - 0.5 * delta)
+
+		return np.where(cond, squared_loss, linear_loss)
 
 	def loss_function(self, y_true, y_pred):
 		del_t = self.huber_loss_init(self.optical_flow.outputs)
-		huber_loss = utils.huber_loss(del_t, self.delta)
+		huber_loss = self.huber_loss(del_t, self.delta)
 
 		return K.square(y_pred - y_true) + (self.huber_weight * huber_loss)
 

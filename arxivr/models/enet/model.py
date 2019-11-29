@@ -15,7 +15,7 @@ from PIL import Image, ImageFile
 
 import gc
 
-from ..models.base import BASE
+from ..base import BASE
 
 class ENET(BASE):
 	def __init__(self, vars, model='enet', inp_shape=(None, None, 1)):

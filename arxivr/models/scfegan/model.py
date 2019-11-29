@@ -1,5 +1,5 @@
-from ..models.base import BASE
-from ..utils.scfegan_utils.utils import *
+from ..base import BASE
+from .layers import *
 
 import numpy as np
 

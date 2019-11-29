@@ -1,7 +1,3 @@
-from keras.layers import Layer, Conv2D, Conv2DTranspose, Reshape, Multiply, LeakyReLU, Activation, multiply, BatchNormalization
-from keras.initializers import RandomNormal
-import keras.backend as K
-import tensorflow as tf
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -15,80 +11,6 @@ import face_recognition
 import math
 
 from os import listdir
-
-
-class LRNLayer(Layer):
-	def __init__(self, alpha=1e-4, beta=0.75, k=2, n=5):
-		super(LRNLayer, self).__init__()
-		self.alpha = alpha
-		self.beta = beta
-		self.k = k
-		self.n = n
-
-	def call(self, x):
-		op = []
-		nc = np.shape(x)[-1]
-		for i in range(nc):
-			sq = K.sum((x[:,:,:,max(0, int(i-self.n/2)):min(nc-1, i+int(self.n/2))+1]) ** 2)
-			op.append(x[:,:,:,i]/((self.k + self.alpha * sq) ** self.beta))
-
-		op = tf.convert_to_tensor(op)
-
-		op = tf.transpose(op, perm=[1,2,3,0])
-
-		op_shape = self.compute_output_shape(np.shape(x))
-
-		op._keras_shape = op_shape
-
-		return op
-
-	def compute_output_shape(self, input_shape):
-		return input_shape
-
-	def compute_mask(self, input, input_mask):
-		return 1*[None]
-
-class GatedDeConv(Layer):
-	def __init__(self, out_shape, kernel_size, strides, std_dev):
-		super(GatedDeConv, self).__init__()
-		self.out_shape = out_shape
-		self.kernel_size = kernel_size
-		self.strides = strides
-		self.std_dev = std_dev
-
-	def call(self, x):
-		inp = x
-
-		kernel = K.random_uniform_variable(shape=(self.kernel_size[0], self.kernel_size[1], self.out_shape[-1], int(x.get_shape()[-1])), low=0, high=1)
-
-		deconv = K.conv2d_transpose(x, kernel=kernel, strides=self.strides, output_shape=self.out_shape, padding='same')
-
-		biases = K.zeros(shape=(self.out_shape[-1]))
-
-		deconv = K.reshape(K.bias_add(deconv, biases), deconv.get_shape())
-		deconv = LeakyReLU()(deconv)
-
-		g = K.conv2d_transpose(inp, kernel, output_shape=self.out_shape, strides=self.strides, padding='same')
-		biases2 = K.zeros(shape=(self.out_shape[-1]))
-		g = K.reshape(K.bias_add(g, biases2), deconv.get_shape())
-
-		g = K.sigmoid(g)
-
-		deconv = tf.multiply(deconv, g)
-
-		outputs = [deconv, g]
-
-		output_shapes = self.compute_output_shape(x.shape)
-		for output, shape in zip(outputs, output_shapes):
-			output._keras_shape = shape
-
-		return [deconv, g]
-
-	def compute_output_shape(self, input_shape):
-		return [self.out_shape, self.out_shape]
-
-	def compute_mask(self, input, input_mask=None):
-		return 2 * [None]
 
 
 def create_sketch():
@@ -143,3 +65,47 @@ def create_mask(img, max_draws=10, max_len=50, max_angle=60, max_lines=10, shape
 
 	else:
 		return
+
+
+def data_loader(vars):
+	all_files = listdir(vars.DATA_INPUT_PATH)
+	inps = []
+	ops = []
+
+	for file in all_files:
+		image = cv2.imread(vars.DATA_INPUT_PATH+file)
+		image = cv2.resize(image, vars.INP_SHAPE)
+
+		mask = create_mask(image)
+
+		mask = np.expand_dims(mask, axis=-1)
+
+		reversed_mask = np.logical_not(mask).astype(np.int32)
+
+		incomplete_image = np.multiply(reversed_mask, image)
+
+		random_noise = np.zeros((np.shape(image)[0], np.shape(image)[1], 1))
+		random_noise = cv2.randn(random_noise, 0, 255)
+		random_noise = np.asarray(random_noise/255, dtype=np.uint8)
+
+		img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+		sketch = cv2.Canny(img, 200, 200)
+		sketch = np.expand_dims(sketch, axis=-1)
+		sketch = np.multiply(mask, sketch)
+
+		color = np.multiply(image, mask)
+
+		inp = np.concatenate(
+			[
+				incomplete_image,
+				mask,
+				sketch,
+				color,
+				random_noise
+			]
+		, axis=-1)
+
+		inps.append(inp)
+		ops.append(image)
+
+	return np.array(inps), np.array(ops)

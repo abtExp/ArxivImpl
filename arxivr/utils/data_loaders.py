@@ -90,13 +90,10 @@ def load_valid_data(dir, batch_size, format='txt', mode='mask', vars={}, debug=F
 	nb_anchors = len(vars.BEST_ANCHORS)//2
 	anchors = [BBOX((0, 0, vars.BEST_ANCHORS[2*i], vars.BEST_ANCHORS[2*i+1])) for i in range(int(len(vars.BEST_ANCHORS)//2))]
 
-	print(dir)
-
 	all_label_files = [file for file in listdir(dir) if file.endswith(format)]
 	all_img_files = [image for image in listdir(dir) if image.endswith('.png')]
 	all_mask_files = [mask for mask in listdir(dir) if 'mask' in mask]
 
-	print(all_label_files)
 
 	labels = []
 	images = []
@@ -241,49 +238,6 @@ def enet_data_loader(vars, mode):
 	images, _, masks, _, _ = load_valid_data(vars.SCFEGAN_DATA_INPUT_PATH, batch_size, vars=vars)
 	return images, masks
 
-
-def scfegan_data_loader(vars):
-	all_files = listdir(vars.SCFEGAN_DATA_INPUT_PATH)
-	inps = []
-	ops = []
-
-	for file in all_files:
-		image = cv2.imread(vars.SCFEGAN_DATA_INPUT_PATH+file)
-		image = cv2.resize(image, vars.SCFEGAN_INP_SHAPE)
-
-		mask = create_mask(image)
-
-		mask = np.expand_dims(mask, axis=-1)
-
-		reversed_mask = np.logical_not(mask).astype(np.int32)
-
-		incomplete_image = np.multiply(reversed_mask, image)
-
-		random_noise = np.zeros((np.shape(image)[0], np.shape(image)[1], 1))
-		random_noise = cv2.randn(random_noise, 0, 255)
-		random_noise = np.asarray(random_noise/255, dtype=np.uint8)
-
-		img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-		sketch = cv2.Canny(img, 200, 200)
-		sketch = np.expand_dims(sketch, axis=-1)
-		sketch = np.multiply(mask, sketch)
-
-		color = np.multiply(image, mask)
-
-		inp = np.concatenate(
-			[
-				incomplete_image,
-				mask,
-				sketch,
-				color,
-				random_noise
-			]
-		, axis=-1)
-
-		inps.append(inp)
-		ops.append(image)
-
-	return np.array(inps), np.array(ops)
 
 # def scfegan_data_loader(vars, mode='train', mask_mode='create'):
 # 	# if mask_mode == create, use create_mask on every image
