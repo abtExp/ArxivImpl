@@ -12,6 +12,9 @@ Summarizing and implementing research papers from arxiv.org
 ###### Upcoming Papers
 <ol>
 <li>Voice Filter</li>
+<li>U-Net</li>
+<li>CSR-Net</li>
+<li>Context Gated Convolution</li>
 </ol>
 
 
