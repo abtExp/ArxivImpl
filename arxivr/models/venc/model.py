@@ -5,7 +5,7 @@ from keras.callbacks import TensorBoard, EarlyStopping, LearningRateScheduler, M
 from keras.initializers import glorot_uniform, RandomUniform
 import keras.backend as K
 
-import utils
+from ..utils.venc_utils import utils
 
 import numpy as np
 

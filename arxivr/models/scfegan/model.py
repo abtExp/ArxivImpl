@@ -1,6 +1,5 @@
 from ..models.base import BASE
 from ..utils.scfegan_utils.utils import *
-from data_loaders import scfegan_data_loader
 
 import numpy as np
 
@@ -34,7 +33,7 @@ class SCFEGAN(BASE):
 
 		super(SCFEGAN, self).__init__(vars)
 
-		self.vars.DATA_LOADER = self.vars.SCFEGAN_DATA_LOADER
+		self.vars.DATA_LOADER = self.vars.DATA_LOADER
 
 	def compose_model(self):
 		self.discriminator = self.get_discriminator()
@@ -308,43 +307,43 @@ class SCFEGAN(BASE):
 				self.save()
 
 
-	def train(self):
-		for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
+	# def train(self):
+	# 	for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
 
-			x, y = scfegan_data_loader(self.vars)
-			print('Loaded Generator Data')
+	# 		x, y = scfegan_data_loader(self.vars)
+	# 		print('Loaded Generator Data')
 
-			masks = np.array(x[1])
+	# 		masks = np.array(x[1])
 
-			self.masks = masks
+	# 		self.masks = masks
 
-			gen_loss = self.generator.train_on_batch(x, y)
+	# 		gen_loss = self.generator.train_on_batch(x, y)
 
-			print('Trained Generator On 1 Batch')
+	# 		print('Trained Generator On 1 Batch')
 
-			x_, y_ = scfegan_data_loader(self.vars)
+	# 		x_, y_ = scfegan_data_loader(self.vars)
 
-			print('Loaded Discriminator Data')
+	# 		print('Loaded Discriminator Data')
 
-			generated = self.generator.predict(x_)
+	# 		generated = self.generator.predict(x_)
 
-			print('Got Generator Predictions')
+	# 		print('Got Generator Predictions')
 
-			self.masks = np.array(x_[1])
+	# 		self.masks = np.array(x_[1])
 
-			completed = self.complete_imgs(y_, x_[0], x_)
+	# 		completed = self.complete_imgs(y_, x_[0], x_)
 
-			valid = np.ones(self.vars.SCFEGAN_DISC_OP_SHAPE)
-			fakes = np.zeros(self.vars.SCFEGAN_DISC_OP_SHAPE)
+	# 		valid = np.ones(self.vars.SCFEGAN_DISC_OP_SHAPE)
+	# 		fakes = np.zeros(self.vars.SCFEGAN_DISC_OP_SHAPE)
 
-			disc_loss_1 = self.discriminator.train_on_batch(y_, valid)
-			print('Trained On Valid Batch')
-			disc_loss_2 = self.discriminator.train_on_batch(completed, fakes)
-			print('Trained On Fake Batch')
+	# 		disc_loss_1 = self.discriminator.train_on_batch(y_, valid)
+	# 		print('Trained On Valid Batch')
+	# 		disc_loss_2 = self.discriminator.train_on_batch(completed, fakes)
+	# 		print('Trained On Fake Batch')
 
-			print('GENERATOR_LOSS : {}, DISCRIMINATOR_LOSS : {}'.format(gen_loss, (disc_loss_1+disc_loss_2)/2))
+	# 		print('GENERATOR_LOSS : {}, DISCRIMINATOR_LOSS : {}'.format(gen_loss, (disc_loss_1+disc_loss_2)/2))
 
-			if e % self.vars.LOG_EPOCH == 0:
-				print('SAVING : {}'.format(e))
-				self.generator.save('./checkpoints/scfegan/generator_{}_{}.hdf5'.format(e, gen_loss))
-				self.discriminator.save('./checkpoints/scfegan/discriminator_{}_{}.hdf5'.format(e, (disc_loss_1+disc_loss_2)/2))
+	# 		if e % self.vars.LOG_EPOCH == 0:
+	# 			print('SAVING : {}'.format(e))
+	# 			self.generator.save('./checkpoints/scfegan/generator_{}_{}.hdf5'.format(e, gen_loss))
+	# 			self.discriminator.save('./checkpoints/scfegan/discriminator_{}_{}.hdf5'.format(e, (disc_loss_1+disc_loss_2)/2))
