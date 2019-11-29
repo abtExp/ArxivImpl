@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0, './models')
 from keras.models import Model
 from keras.layers import Conv2D, BatchNormalization, Dropout, MaxPooling2D, Conv2DTranspose, Input, Concatenate, Add, UpSampling2D, ZeroPadding2D, SpatialDropout2D, Permute, Reshape, Activation, Softmax
 from keras.layers.advanced_activations import PReLU
@@ -17,7 +15,7 @@ from PIL import Image, ImageFile
 
 import gc
 
-from base import BASE
+from ..models.base import BASE
 
 class ENET(BASE):
 	def __init__(self, vars, model='enet', inp_shape=(None, None, 1)):

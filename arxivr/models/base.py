@@ -8,17 +8,19 @@ class BASE():
 
 	def train(self):
 		self.init_loaders()
-		self.model.fit_generator(self.train_loader, validation_data=self.valid_loader, epochs=self.vars.TRAIN_EPOCHS)
+		self.model.fit_generator(self.train_loader, validation_data=self.valid_loader, epochs=self.vars.TRAIN_EPOCHS, callbacks=self.vars.get_callbacks(self.model_name))
 
 	def save(self, path):
 		self.model.save(path)
 
-	def load_weights(self):
+	def load_weights(self, pth):
+		if pth:
+			self.vars.BEST_WEIGHT_PATH = pth
 		self.model.load_weights(self.vars.BEST_WEIGHT_PATH)
 
 	def init_loaders(self):
-		self.train_loader = self.vars.DATA_LOADER(self.vars, 'train')
-		self.valid_loader = self.vars.DATA_LOADER(self.vars, 'valid')
+		self.train_loader = self.DATA_LOADER(self.vars, 'train')
+		self.valid_loader = self.DATA_LOADER(self.vars, 'valid')
 
 	def summary(self):
 		self.model.summary()
@@ -38,3 +40,7 @@ class BASE():
 
 	def process(self, path, *args):
 		return
+
+	def train(self):
+		self.init_loaders()
+		self.model.fit_generator(self.train_loader, validation_data=self.valid_loader, epochs=self.vars.TRAIN_EPOCHS, callbacks=self.vars.get_callbacks(), steps_per_epoch=self.vars.STEPS_PER_EPOCH)

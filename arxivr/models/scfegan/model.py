@@ -1,9 +1,5 @@
-import sys
-sys.path.insert(0, './models')
-sys.path.insert(0, './utils')
-
-from base import BASE
-from scfegan_utils import *
+from ..models.base import BASE
+from ..utils.scfegan_utils.utils import *
 from data_loaders import scfegan_data_loader
 
 import numpy as np

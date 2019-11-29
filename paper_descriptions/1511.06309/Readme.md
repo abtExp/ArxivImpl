@@ -28,7 +28,7 @@ The model works as follows :
 
 3. The *<b>temporal encoder</b>* receives this encoding after being projected in temporal space and generates the hidden temporal activation <b>h\<t\></b> by also integrating the temporal info stored from the previous frames.
 
-######  The LSTM uses <a href='https://arxiv.org/abs/1506.04214'>convLSTM</a> architecure,so it uses convolutions instead of linear operations, thus greatly reducing the parameters as well as producing encoding in the same layout as the spatial encoder. 
+######  The LSTM uses <a href='https://arxiv.org/abs/1506.04214'>convLSTM</a> architecure,so it uses convolutions instead of linear operations, thus greatly reducing the parameters as well as producing encoding in the same layout as the spatial encoder.
 
 
 <b><i>i<sub>t</sub></i></b> = σ(x<sub>t</sub> ∗ w<sub>xi</sub> + h<sub>t-1</sub> ∗ w<sub>hi</sub> + w<sub>ibias</sub>)<br />
@@ -48,7 +48,7 @@ To Ensure smoothness in the motion and avoid randomness in between frames,local 
 It is used as it has edge preserving capabilities.
 
 <b>H<sub>δ</sub>(a<sub>ij</sub>)</b> = <b>{</b>
- (1/2)a<sub>ij</sub><sup>2</sup>  ,   for <b>|</b>a<sub>ij</sub><b>|</b> ≤ δ 
+ (1/2)a<sub>ij</sub><sup>2</sup>  ,   for <b>|</b>a<sub>ij</sub><b>|</b> ≤ δ
 δ(<b>|</b>a<sub>ij</sub><b>|</b> − (1/2)δ)     ,otherwise
 										<b>}</b>
 
@@ -85,7 +85,7 @@ ________________________________________________________________________________
 Consists of a single layer with 16 (7x7) filters.
 <br/>
 
-2. *<b>The LSTM</b>* 
+2. *<b>The LSTM</b>*
 Has 64 (7x7) filters
 <br/>
 
@@ -94,7 +94,7 @@ Has 2 conv layers each with 2 (15x15) filters and a (1x1) conv layer.
 
 *<b>The Grid Generator, Huber Loss and the Sampler have no trainable parameters.</b>*
 
-<img src='https://github.com/abtExp/ArxivImpl/blob/master/1511.06309/spation.PNG' alt='spatio-temporal video autoencoder'/>
+<img src='./spation.png' alt='spatio-temporal video autoencoder'/>
 
 
 ###### Training was done using RMSProp with lr = 10<sup>-4</sup> and decay of 0.9 after every 5 epochs. Spatial Encoder was initialized using <u>xavier</u> initializer. The LSTM weights were initialized from a unform distribution U(-0.08,0.08). Biases except the forget gate were 0 and at forget gate were 1. Gradient Clipping was used.
