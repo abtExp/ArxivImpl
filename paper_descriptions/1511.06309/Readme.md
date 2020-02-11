@@ -94,7 +94,7 @@ Has 2 conv layers each with 2 (15x15) filters and a (1x1) conv layer.
 
 *<b>The Grid Generator, Huber Loss and the Sampler have no trainable parameters.</b>*
 
-<img src='./spation.png' alt='spatio-temporal video autoencoder'/>
+<img src='./arch.png' alt='spatio-temporal video autoencoder'/>
 
 
 ###### Training was done using RMSProp with lr = 10<sup>-4</sup> and decay of 0.9 after every 5 epochs. Spatial Encoder was initialized using <u>xavier</u> initializer. The LSTM weights were initialized from a unform distribution U(-0.08,0.08). Biases except the forget gate were 0 and at forget gate were 1. Gradient Clipping was used.

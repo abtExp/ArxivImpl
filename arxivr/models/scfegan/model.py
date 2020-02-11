@@ -33,7 +33,7 @@ class SCFEGAN(BASE):
 
 		super(SCFEGAN, self).__init__(vars)
 
-		self.vars.DATA_LOADER = self.vars.DATA_LOADER
+		self.vars.DATA_LOADER = None
 
 	def compose_model(self):
 		self.discriminator = self.get_discriminator()
@@ -131,6 +131,10 @@ class SCFEGAN(BASE):
 		x = multiply([x, g])
 
 		return x, g
+
+	def GatedDeConv2D(self, x, output_shape, kernel_size=(5, 5), strides=(2, 2)):
+		inp = x
+		x = Conv2DTranspose(strides=strides, kernel_size=kernel_size)
 
 	def GatedDeConv2D(self, x, out_shape, kernel_size=(5, 5), strides=(2, 2), std_dev=0.02):
 		return self.GatedDeConv(out_shape, kernel_size, strides, std_dev)(x)

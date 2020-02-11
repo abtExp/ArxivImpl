@@ -3,6 +3,8 @@ from keras.initializers import RandomNormal
 import keras.backend as K
 import tensorflow as tf
 
+import numpy as np
+
 class LRNLayer(Layer):
 	def __init__(self, alpha=1e-4, beta=0.75, k=2, n=5):
 		super(LRNLayer, self).__init__()
@@ -68,10 +70,10 @@ class GatedDeConv(Layer):
 		for output, shape in zip(outputs, output_shapes):
 			output._keras_shape = shape
 
-		return [deconv, g]
+		return deconv, g
 
 	def compute_output_shape(self, input_shape):
 		return [self.out_shape, self.out_shape]
 
 	def compute_mask(self, input, input_mask=None):
-		return 2 * [None]
+		return [None]
