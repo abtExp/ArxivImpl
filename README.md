@@ -7,6 +7,7 @@ Summarizing and implementing research papers from arxiv.org
 <li><a href=''>SC-FEGAN</a></li>
 <li><a href=''>ENet</a></li>
 <li><a href=''>Spatio-Temporal Video Autoencoder With Differentiable Memory</a></li>
+<li><a href=''>OctConv</a></li>
 </ol>
 
 ###### Upcoming Papers
