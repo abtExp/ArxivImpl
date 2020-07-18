@@ -1,13 +1,22 @@
-import keras
-import numpy as np
+from tensorflow.keras.utils import Sequence
+# from torch import loader
 
-class FEEDER(keras.utils.Sequence):
-	def __init__(self, vars, loader=None, mode='train'):
-		self.vars = vars
-		self.mode = mode
-		self.loader = loader()
 
-		super(FEEDER, self).__init__()
+class DATA_LOADER():
+	def __init__(self, framework='keras', config=None, feeder=None):
+		if framework == 'keras':
+			loader = DATA_LOADER_KERAS
+		else:
+			loader = DATA_LOADER_TORCH
+
+		return loader(config, feeder)
+
+
+class DATA_LOADER_KERAS(Sequence):
+	def __init__(self, config, feeder=None):
+		self.feeder = feeder(config)
+
+		super(DATA_LOADER_KERAS, self).__init__()
 
 		if mode == 'train':
 			self.batch_size = self.vars.DETECTOR_TRAIN_BATCH_SIZE
@@ -48,3 +57,8 @@ class FEEDER(keras.utils.Sequence):
 			index = np.arrange(len(self.all_indices[i]))
 			np.random.shuffle(index)
 			self.indices.append(index)
+
+
+class DATA_LOADER_TORCH():
+	def __init__(self):
+		return

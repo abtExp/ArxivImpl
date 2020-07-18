@@ -1,3 +1,3 @@
-from ..models.scfegan.model import SCFEGAN
-from ..models.enet.model import ENET
-from ..models.venc.model import STEMPENC
+from .scfegan import SCFEGAN
+from .octconv import OCTCONV
+from .base import BASE
