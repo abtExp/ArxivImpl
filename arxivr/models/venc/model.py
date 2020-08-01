@@ -1,9 +1,10 @@
 # Imports
-from keras.models import Sequential, Model
-from keras.layers import Conv2D, ConvLSTM2D, InputLayer, UpSampling2D, MaxPooling2D, Input
-from keras.callbacks import TensorBoard, EarlyStopping, LearningRateScheduler, ModelCheckpoint
-from keras.initializers import glorot_uniform, RandomUniform
-import keras.backend as K
+from ..base import BASE
+from tf.keras.models import Sequential, Model
+from tf.keras.layers import Conv2D, ConvLSTM2D, InputLayer, UpSampling2D, MaxPooling2D, Input
+from tf.keras.callbacks import TensorBoard, EarlyStopping, LearningRateScheduler, ModelCheckpoint
+from tf.keras.initializers import glorot_uniform, RandomUniform
+import tf.keras.backend as K
 
 import tensorflow as tf
 import numpy as np
@@ -12,8 +13,9 @@ import cv2 as cv
 from PIL import Image
 
 
-class STEMPENC():
-	def __init__(self):
+class STEMPENC(BASE):
+	def __init__(self, config):
+		super(STEMPENC, self).__init__(config, 'stempenc')
 		self.spatial_filters = 16
 		self.spatial_filter_size = 7
 		self.convlstm_filters = 64

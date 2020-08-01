@@ -3,18 +3,18 @@ from .layers import *
 
 import numpy as np
 
-import keras.backend as K
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.utils import plot_model
-from keras.applications.vgg16 import VGG16
+import tensorflow.keras.backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.applications.vgg16 import VGG16
 from keras_contrib.layers import InstanceNormalization
-from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, ReduceLROnPlateau
-from keras.layers import Conv2D, Conv2DTranspose, Activation, Dense, BatchNormalization, \
+from tensorflow.keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras.layers import Conv2D, Conv2DTranspose, Activation, Dense, BatchNormalization, \
 						Reshape, Input, Concatenate, Flatten, MaxPooling2D, multiply,    \
 						LeakyReLU, Dropout, UpSampling2D, ZeroPadding2D, Lambda, Multiply
 
-from keras.utils import plot_model
+from tensorflow.keras.utils import plot_model
 
 import tensorflow as tf
 
@@ -33,7 +33,7 @@ class SCFEGAN(BASE):
 
 		super(SCFEGAN, self).__init__(vars)
 
-		self.vars.DATA_LOADER = None
+		self.config.DATA_LOADER = None
 
 	def compose_model(self):
 		self.discriminator = self.get_discriminator()
@@ -46,7 +46,7 @@ class SCFEGAN(BASE):
 
 	def get_generator(self):
 		# Generator will take in the patched image, mask, sketch info, color_info and random noise
-		inp = Input(shape=(self.vars.INP_SHAPE[0], self.vars.INP_SHAPE[1], 9))
+		inp = Input(shape=(self.config.INP_SHAPE[0], self.config.INP_SHAPE[1], 9))
 		cnum = 64
 		x1, mask1 = self.GatedConv2D(inp, cnum, (7, 7), (2,2), use_lrn=False)
 		x2, mask2 = self.GatedConv2D(x1, 2*cnum, (5, 5), (2, 2))
@@ -61,31 +61,31 @@ class SCFEGAN(BASE):
 		x7, _ = self.GatedConv2D(x7, 8*cnum, (3, 3), (1, 1), dilation=8)
 		x7, _ = self.GatedConv2D(x7, 8*cnum, (3, 3), (1, 1), dilation=16)
 
-		x8, _ = self.GatedDeConv2D(x7, [self.vars.TRAIN_BATCH_SIZE, int(self.vars.INP_SHAPE[0]/64), int(self.vars.INP_SHAPE[1]/64), 8*cnum])
+		x8, _ = self.GatedDeConv2D(x7, [self.config.TRAIN_BATCH_SIZE, int(self.config.INP_SHAPE[0]/64), int(self.config.INP_SHAPE[1]/64), 8*cnum])
 		x8 = Concatenate(axis=0)([x6, x8])
 		x8, mask8 = self.GatedConv2D(x8, 8*cnum, (3, 3), (1, 1))
 
-		x9, _ = self.GatedDeConv2D(x8, [self.vars.TRAIN_BATCH_SIZE, int(self.vars.INP_SHAPE[0]/32), int(self.vars.INP_SHAPE[1]/32), 8*cnum])
+		x9, _ = self.GatedDeConv2D(x8, [self.config.TRAIN_BATCH_SIZE, int(self.config.INP_SHAPE[0]/32), int(self.config.INP_SHAPE[1]/32), 8*cnum])
 		x9 = Concatenate(axis=0)([x5, x9])
 		x9, mask9 = self.GatedConv2D(x9, 8*cnum, (3, 3), (1, 1))
 
-		x10, _ = self.GatedDeConv2D(x9, [self.vars.TRAIN_BATCH_SIZE, int(self.vars.INP_SHAPE[0]/16), int(self.vars.INP_SHAPE[1]/16), 8*cnum])
+		x10, _ = self.GatedDeConv2D(x9, [self.config.TRAIN_BATCH_SIZE, int(self.config.INP_SHAPE[0]/16), int(self.config.INP_SHAPE[1]/16), 8*cnum])
 		x10 = Concatenate(axis=0)([x4, x10])
 		x10, mask10 = self.GatedConv2D(x10, 8*cnum, (3, 3), (1, 1))
 
-		x11, _ = self.GatedDeConv2D(x10, [self.vars.TRAIN_BATCH_SIZE, int(self.vars.INP_SHAPE[0]/8), int(self.vars.INP_SHAPE[1]/8), 4*cnum])
+		x11, _ = self.GatedDeConv2D(x10, [self.config.TRAIN_BATCH_SIZE, int(self.config.INP_SHAPE[0]/8), int(self.config.INP_SHAPE[1]/8), 4*cnum])
 		x11 = Concatenate(axis=0)([x3, x11])
 		x11, mask11 = self.GatedConv2D(x11, 4*cnum, (3, 3), (1, 1))
 
-		x12, _ = self.GatedDeConv2D(x11, [self.vars.TRAIN_BATCH_SIZE, int(self.vars.INP_SHAPE[0]/4), int(self.vars.INP_SHAPE[1]/4), 2*cnum])
+		x12, _ = self.GatedDeConv2D(x11, [self.config.TRAIN_BATCH_SIZE, int(self.config.INP_SHAPE[0]/4), int(self.config.INP_SHAPE[1]/4), 2*cnum])
 		x12 = Concatenate(axis=0)([x2, x12])
 		x12, mask12 = self.GatedConv2D(x12, 2*cnum, (3, 3), (1, 1))
 
-		x13, _ = self.GatedDeConv2D(x12, [self.vars.TRAIN_BATCH_SIZE, int(self.vars.INP_SHAPE[0]/2), int(self.vars.INP_SHAPE[1]/2), cnum])
+		x13, _ = self.GatedDeConv2D(x12, [self.config.TRAIN_BATCH_SIZE, int(self.config.INP_SHAPE[0]/2), int(self.config.INP_SHAPE[1]/2), cnum])
 		x13 = Concatenate(axis=0)([x1, x13])
 		x13, mask13 = self.GatedConv2D(x13, cnum, (3, 3), (1, 1))
 
-		x14, _ = self.GatedDeConv2D(x13, [self.vars.TRAIN_BATCH_SIZE, int(self.vars.INP_SHAPE[0]), int(self.vars.INP_SHAPE[1]), 9])
+		x14, _ = self.GatedDeConv2D(x13, [self.config.TRAIN_BATCH_SIZE, int(self.config.INP_SHAPE[0]), int(self.config.INP_SHAPE[1]), 9])
 		x14 = Concatenate(axis=0)([inp, x14])
 		x14, mask14 = self.GatedConv2D(x14, 3, (3, 3), (1, 1))
 
@@ -96,18 +96,19 @@ class SCFEGAN(BASE):
 		return model
 
 	def get_discriminator(self):						# inp_image+mask+channels
-		inp = Input(shape=tuple(self.vars.INP_SHAPE[:2])+(3+1+3,))
-		x = Conv2D(filters=64, kernel_size=(3, 3), strides=(2, 2), activation='relu')(inp)
+		inp = Input(shape=tuple((224, 224))+(3+1+3,))
+		x = SpectralNormedConv2D(filters=64, kernel_size=(3, 3), activation='relu')(inp)
 		x = ZeroPadding2D(padding=(1, 1))(x)
-		x = Conv2D(filters=128, kernel_size=(3, 3), strides=(2, 2), activation='relu')(x)
+		x = SpectralNormedConv2D(filters=128, kernel_size=(3, 3), activation='relu')(x)
 		x = ZeroPadding2D(padding=(1, 1))(x)
-		x = Conv2D(filters=256, kernel_size=(3, 3), strides=(2, 2), activation='relu')(x)
+		x = SpectralNormedConv2D(filters=256, kernel_size=(3, 3), activation='relu')(x)
 		x = ZeroPadding2D(padding=(1, 1))(x)
-		x = Conv2D(filters=256, kernel_size=(3, 3), strides=(2, 2), activation='relu')(x)
+		x = SpectralNormedConv2D(filters=256, kernel_size=(3, 3), activation='relu')(x)
 		x = ZeroPadding2D(padding=(1, 1))(x)
-		x = Conv2D(filters=256, kernel_size=(3, 3), strides=(2, 2), activation='relu')(x)
+		x = SpectralNormedConv2D(filters=256, kernel_size=(3, 3), activation='relu')(x)
 		x = ZeroPadding2D(padding=(1, 1))(x)
-		x = Conv2D(filters=256, kernel_size=(3, 3), strides=(2, 2), activation='relu')(x)
+		x = SpectralNormedConv2D(filters=256, kernel_size=(3, 3), activation='sigmoid')(x)
+		x = Flatten()(x)
 
 		model = Model(inputs=inp, outputs=x)
 
@@ -131,10 +132,6 @@ class SCFEGAN(BASE):
 		x = multiply([x, g])
 
 		return x, g
-
-	def GatedDeConv2D(self, x, output_shape, kernel_size=(5, 5), strides=(2, 2)):
-		inp = x
-		x = Conv2DTranspose(strides=strides, kernel_size=kernel_size)
 
 	def GatedDeConv2D(self, x, out_shape, kernel_size=(5, 5), strides=(2, 2), std_dev=0.02):
 		return self.GatedDeConv(out_shape, kernel_size, strides, std_dev)(x)
@@ -161,7 +158,7 @@ class SCFEGAN(BASE):
 	def generator_loss_function(self, images, generated):
 		cmp_images = self.complete_imgs(np.array(images), self.masks, generated)
 
-		ppxl_loss = self.per_pixel_loss(images, generated, self.masks, self.vars.SCFEGAN_ALPHA)
+		ppxl_loss = self.per_pixel_loss(images, generated, self.masks, self.config.SCFEGAN_ALPHA)
 		perc_loss = self.perceptual_loss(images, generated, cmp_images)
 		g_sn_loss = self.gsn_loss(cmp_images)
 		sg_loss = self.style_loss(generated)
@@ -169,15 +166,15 @@ class SCFEGAN(BASE):
 		tv_loss = self.total_variation_loss(cmp_images)
 		add_term = K.square(self.discriminator(images))
 
-		g_loss = ppxl_loss + (self.vars.SCFEGAN_SIGMA * perc_loss)\
-				+ (self.vars.SCFEGAN_BETA * g_sn_loss) + (self.vars.SCFEGAN_GAMMA *\
-				(sg_loss + sc_loss)) + (self.vars.SCFEGAN_V * tv_loss) + add_term
+		g_loss = ppxl_loss + (self.config.SCFEGAN_SIGMA * perc_loss)\
+				+ (self.config.SCFEGAN_BETA * g_sn_loss) + (self.config.SCFEGAN_GAMMA *\
+				(sg_loss + sc_loss)) + (self.config.SCFEGAN_V * tv_loss) + add_term
 
 		return g_loss
 
 	# ! Test 								y_true , y_pred
 	def discriminator_loss_function(self, images, completed):
-		loss = (1 - images) + (1 + completed) + self.vars.SCFEGAN_THETA * self.gp_loss(images, completed)
+		loss = (1 - images) + (1 + completed) + self.config.SCFEGAN_THETA * self.gp_loss(images, completed)
 		return loss
 
 	# ! Test
@@ -220,8 +217,8 @@ class SCFEGAN(BASE):
 
 		per_layer_features = nc ** 2
 
-		t1 = np.dot(gen_features, (self.vars.SCFEGAN_THETA - gen_features))
-		t2 = np.dot(gt_features, (self.vars.SCFEGAN_THETA - gt_features))
+		t1 = np.dot(gen_features, (self.config.SCFEGAN_THETA - gen_features))
+		t2 = np.dot(gt_features, (self.config.SCFEGAN_THETA - gt_features))
 
 		sl = np.sum((t1 - t2)/per_layer_features)
 
@@ -272,24 +269,24 @@ class SCFEGAN(BASE):
 		self.discriminator.summary()
 
 	def plot(self):
-		plot_model(self.generator, self.vars.MODEL_IMAGE_PATH+'generator.png', show_shapes=True)
-		plot_model(self.discriminator, self.vars.MODEL_IMAGE_PATH+'discriminator.png', show_shapes=True)
+		plot_model(self.generator, self.config.MODEL_IMAGE_PATH+'generator.png', show_shapes=True)
+		plot_model(self.discriminator, self.config.MODEL_IMAGE_PATH+'discriminator.png', show_shapes=True)
 
 	def save(self):
-		self.generator.save(self.vars.CHECKPOINTS_PATH+'generator.hdf5')
-		self.discriminator.save(self.vars.CHECKPOINTS_PATH+'discriminator.hdf5')
+		self.generator.save(self.config.CHECKPOINTS_PATH+'generator.hdf5')
+		self.discriminator.save(self.config.CHECKPOINTS_PATH+'discriminator.hdf5')
 
 	# Create The Logger And The Progress Bars For Tracking Performance
 	def train_(self):
-		for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
+		for e in range(self.config.SCFEGAN_TRAIN_EPOCHS):
 
-			x, y = scfegan_data_loader(self.vars)
+			x, y = scfegan_data_loader(self.config)
 
 			self.masks = np.array(x[1])
 
 			generator_loss = self.generator.train_on_batch(x, y)
 
-			x_, y_ = scfegan_data_loader(self.vars)
+			x_, y_ = scfegan_data_loader(self.config)
 
 			self.masks = np.array(x_[1])
 
@@ -307,47 +304,5 @@ class SCFEGAN(BASE):
 
 			print('generator_loss : {.%2f} discriminator_loss : {%2f}'.format(generator_loss, discriminator_loss))
 
-			if e%self.vars.LOG_EPOCH == 0:
+			if e%self.config.LOG_EPOCH == 0:
 				self.save()
-
-
-	# def train(self):
-	# 	for e in range(self.vars.SCFEGAN_TRAIN_EPOCHS):
-
-	# 		x, y = scfegan_data_loader(self.vars)
-	# 		print('Loaded Generator Data')
-
-	# 		masks = np.array(x[1])
-
-	# 		self.masks = masks
-
-	# 		gen_loss = self.generator.train_on_batch(x, y)
-
-	# 		print('Trained Generator On 1 Batch')
-
-	# 		x_, y_ = scfegan_data_loader(self.vars)
-
-	# 		print('Loaded Discriminator Data')
-
-	# 		generated = self.generator.predict(x_)
-
-	# 		print('Got Generator Predictions')
-
-	# 		self.masks = np.array(x_[1])
-
-	# 		completed = self.complete_imgs(y_, x_[0], x_)
-
-	# 		valid = np.ones(self.vars.SCFEGAN_DISC_OP_SHAPE)
-	# 		fakes = np.zeros(self.vars.SCFEGAN_DISC_OP_SHAPE)
-
-	# 		disc_loss_1 = self.discriminator.train_on_batch(y_, valid)
-	# 		print('Trained On Valid Batch')
-	# 		disc_loss_2 = self.discriminator.train_on_batch(completed, fakes)
-	# 		print('Trained On Fake Batch')
-
-	# 		print('GENERATOR_LOSS : {}, DISCRIMINATOR_LOSS : {}'.format(gen_loss, (disc_loss_1+disc_loss_2)/2))
-
-	# 		if e % self.vars.LOG_EPOCH == 0:
-	# 			print('SAVING : {}'.format(e))
-	# 			self.generator.save('./checkpoints/scfegan/generator_{}_{}.hdf5'.format(e, gen_loss))
-	# 			self.discriminator.save('./checkpoints/scfegan/discriminator_{}_{}.hdf5'.format(e, (disc_loss_1+disc_loss_2)/2))

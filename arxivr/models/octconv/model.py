@@ -1,6 +1,6 @@
 from .layers import OCTCONV_LAYER
 
-from ..models import BASE
+from ..base import BASE
 
 class OCTCONV(BASE):
 	def __init__(self, config):

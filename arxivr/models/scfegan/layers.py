@@ -1,6 +1,6 @@
-from keras.layers import Layer, Conv2D, Conv2DTranspose, Reshape, Multiply, LeakyReLU, Activation, multiply, BatchNormalization
-from keras.initializers import RandomNormal
-import keras.backend as K
+from tensorflow.keras.layers import Layer, Conv2D, Conv2DTranspose, Reshape, Multiply, LeakyReLU, Activation, multiply, BatchNormalization
+from tensorflow.keras.initializers import RandomNormal
+import tensorflow.keras.backend as K
 import tensorflow as tf
 
 import numpy as np
@@ -77,3 +77,36 @@ class GatedDeConv(Layer):
 
 	def compute_mask(self, input, input_mask=None):
 		return [None]
+
+
+def kernel_spectral_norm(kernel, iteration=1, name='kernel_sn'):
+	# spectral_norm
+	def l2_norm(input_x, epsilon=1e-12):
+		input_x_norm = input_x / (tf.reduce_sum(input_x**2)**0.5 + epsilon)
+		return input_x_norm
+	with tf.variable_scope(name) as scope:
+		w_shape = kernel.get_shape().as_list()
+		w_mat = tf.reshape(kernel, [-1, w_shape[-1]])
+		u = tf.get_variable(
+			'u', shape=[1, w_shape[-1]],
+			initializer=tf.truncated_normal_initializer(),
+			trainable=False)
+
+		def power_iteration(u, ite):
+			v_ = tf.matmul(u, tf.transpose(w_mat))
+			v_hat = l2_norm(v_)
+			u_ = tf.matmul(v_hat, w_mat)
+			u_hat = l2_norm(u_)
+			return u_hat, v_hat, ite+1
+
+		u_hat, v_hat,_ = power_iteration(u, iteration)
+		sigma = tf.matmul(tf.matmul(v_hat, w_mat), tf.transpose(u_hat))
+		w_mat = w_mat / sigma
+		with tf.control_dependencies([u.assign(u_hat)]):
+			w_norm = tf.reshape(w_mat, w_shape)
+		return w_norm
+
+class SpectralNormedConv2D(tf.keras.layers.Conv2D):
+	def build(self, input_shape):
+		super(SpectralNormedConv2D, self).build(input_shape)
+		self.kernel = kernel_spectral_norm(self.kernel)

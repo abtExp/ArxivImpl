@@ -1,38 +1,44 @@
-from keras.utils import plot_model
+from ..utils.trainer import TRAINER
 
 class BASE():
-	def __init__(self, vars):
-		self.vars = vars
-		self.vars.MODEL_IMAGE_PATH += self.model_name+'.png'
+	def __init__(self, config, model_name):
+		self.config = config
+		self.model_name = model_name
+		self.config.MODEL_IMAGE_PATH += self.model_name+'.png'
 		self.model = self.compose_model()
 
 	def train(self):
 		self.init_loaders()
-		self.model.fit_generator(self.train_loader, validation_data=self.valid_loader, epochs=self.vars.TRAIN_EPOCHS, callbacks=self.vars.get_callbacks(self.model_name))
+		self.model.fit_generator(
+				self.train_loader,
+				validation_data=self.valid_loader,
+				epochs=self.config.TRAIN_EPOCHS,
+				callbacks=self.config.get_callbacks(self.model_name)
+			)
 
 	def save(self, path):
 		self.model.save(path)
 
 	def load_weights(self, pth):
 		if pth:
-			self.vars.BEST_WEIGHT_PATH = pth
-		self.model.load_weights(self.vars.BEST_WEIGHT_PATH)
+			self.config.BEST_WEIGHT_PATH = pth
+		self.model.load_weights(self.config.BEST_WEIGHT_PATH)
 
 	def init_loaders(self):
-		self.train_loader = self.DATA_LOADER(self.vars, 'train')
-		self.valid_loader = self.DATA_LOADER(self.vars, 'valid')
+		self.train_loader = self.DATA_LOADER(self.config, 'train')
+		self.valid_loader = self.DATA_LOADER(self.config, 'valid')
 
 	def summary(self):
 		self.model.summary()
 
 	def plot(self):
-		plot_model(self.model, self.vars.MODEL_IMAGE_PATH, show_shapes=True)
+		plot_model(self.model, self.config.MODEL_IMAGE_PATH, show_shapes=True)
 
 	def predict(self, data):
 		return self.model.predict(data)[0]
 
 	def predict_on_batch(self):
-		batch = self.vars.TEST_LOADER(self.vars.TEST_BATCH_SIZE, 'test')
+		batch = self.config.TEST_LOADER(self.config.TEST_BATCH_SIZE, 'test')
 		return self.model.predict_on_batch(batch)
 
 	def compose_model(self):
@@ -40,7 +46,3 @@ class BASE():
 
 	def process(self, path, *args):
 		return
-
-	def train(self):
-		self.init_loaders()
-		self.model.fit_generator(self.train_loader, validation_data=self.valid_loader, epochs=self.vars.TRAIN_EPOCHS, callbacks=self.vars.get_callbacks(), steps_per_epoch=self.vars.STEPS_PER_EPOCH)
