@@ -1,9 +1,9 @@
 {
     "MODEL": {
-        "MODEL_NAME": "scfegan",
-        "MODEL_DESCRIPTION": "SC-FEGAN: Face Editing Generative Adversarial Network with User’s Sketch and Color",
-        "MODEL_TYPE": "gan",
-        "PROBLEM_TYPE": "inpainting",
+        "MODEL_NAME": "model",
+        "MODEL_DESCRIPTION": "Base Model",
+        "MODEL_TYPE": "dnn",
+        "PROBLEM_TYPE": "binary_classification",
         "MODEL_PARAMS": {
             "INPUT_SHAPE": [224, 224, 3],
             "KERNEL_SIZE": [3, 3],
@@ -11,16 +11,16 @@
         }
     },
     "DATASET": {
-        "INTERFACE_TYPE": "directory",
-        "INTERFACE_FILE_PATH": "",
-        "DATA_PATH": "_path_to_celeba_dset_",
+        "INTERFACE_TYPE": "file",
+        "INTERFACE_FILE_PATH": "*.csv",
+        "DATA_PATH": "",
         "DIRECTORIES": "",
-        "TRAIN_TEST_SPLIT": true,
+        "TRAIN_TEST_SPLIT": false,
         "INPUT_TYPE": "image",
         "TARGET_PATH": ""
     },
     "HYPERPARAMETERS": {
-        "TRAINING_BATCH_SIZE": 8,
+        "TRAINING_BATCH_SIZE": 32,
         "NUM_EPOCHS": 100,
         "STEPS_PER_EPOCH": 0,
         "LEARNING_RATE": 1e-3,

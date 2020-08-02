@@ -2,6 +2,9 @@ import os
 import cv2
 import numpy as np
 
+'''
+Data Feeder Is Required For Custom Loading Of Files
+'''
 
 class DATA_FEEDER():
 	def __init__(self, config, feed_function):
