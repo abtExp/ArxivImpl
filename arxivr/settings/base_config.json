@@ -2,25 +2,26 @@
     "MODEL": {
         "MODEL_NAME": "model",
         "MODEL_DESCRIPTION": "Base Model",
-        "MODEL_TYPE": "dnn",
-        "PROBLEM_TYPE": "binary_classification",
+        "MODEL_TYPE": "",
+        "PROBLEM_TYPE": "",
         "MODEL_PARAMS": {
-            "INPUT_SHAPE": [224, 224, 3],
-            "KERNEL_SIZE": [3, 3],
-            "STRIDES": [2, 2]
+            "INPUT_SHAPE": [224, 224, 3]
         }
     },
     "DATASET": {
-        "INTERFACE_TYPE": "file",
-        "INTERFACE_FILE_PATH": "*.csv",
+        "INTERFACE_TYPE": "csv",
+        "INTERFACE_PATH": "*.csv",
         "DATA_PATH": "",
+        "X_COLS": ["#filename"],
+        "Y_COL": "region_shape_attributes",
         "DIRECTORIES": "",
-        "TRAIN_TEST_SPLIT": false,
+        "TRAIN_TEST_SPLIT": true,
+        "TEST_SPLIT_SIZE": 0.1,
         "INPUT_TYPE": "image",
         "TARGET_PATH": ""
     },
     "HYPERPARAMETERS": {
-        "TRAINING_BATCH_SIZE": 32,
+        "TRAINING_BATCH_SIZE": 8,
         "NUM_EPOCHS": 100,
         "STEPS_PER_EPOCH": 0,
         "LEARNING_RATE": 1e-3,
