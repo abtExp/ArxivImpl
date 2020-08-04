@@ -12,7 +12,7 @@
     },
     "DATASET": {
         "INTERFACE_TYPE": "directory",
-        "INTERFACE_FILE_PATH": "",
+        "INTERFACE_PATH": "",
         "DATA_PATH": "_path_to_celeba_dset_",
         "DIRECTORIES": "",
         "TRAIN_TEST_SPLIT": true,
