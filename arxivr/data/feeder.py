@@ -25,8 +25,8 @@ class FEEDER():
         if interface == 'csv':
             all_dset = dset[
                 [
-                    *self.config.DATASET['X_COLS'],
-                    self.config.DATASET['Y_COL']
+                    *self.config.DATASET['FEATURE_COLS'],
+                    self.config.DATASET['TARGET_COL']
                 ]
             ].values
 
@@ -35,8 +35,8 @@ class FEEDER():
 
         elif interface == 'txt':
             delimiter = self.config.DATASET['DELIMITER']
-            x_idx = self.config.DATASET['X_COLS']
-            y_idx = self.config.DATASET['Y_COL']
+            x_idx = self.config.DATASET['FEATURE_COLS']
+            y_idx = self.config.DATASET['TARGET_COL']
             all_x = [np.array(i.split(delimiter))[*x_idx] for i in dset]
             all_y = [[i.split(delimiter)[y_idx] for i in dset]]
 
