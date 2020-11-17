@@ -5,7 +5,7 @@
         "MODEL_TYPE": "gan",
         "PROBLEM_TYPE": "inpainting",
         "MODEL_PARAMS": {
-            "INPUT_SHAPE": [224, 224, 3],
+            "INPUT_SHAPE": [512, 512, 3],
             "KERNEL_SIZE": [3, 3],
             "STRIDES": [2, 2]
         }
