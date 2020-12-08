@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 import tensorflow.keras.backend as K
 from .utils import extract_features, complete_imgs
 
@@ -12,7 +13,7 @@ from .utils import extract_features, complete_imgs
     alpha : hyperparameter deciding the weight of removed region
 
     returns :
-                ppl : per_pixel loss
+            ppl : per_pixel loss
 '''
 def per_pixel_loss(ground_truth, generated, mask, alpha):
     nf = np.prod(np.shape(ground_truth[0]))
@@ -35,7 +36,7 @@ def per_pixel_loss(ground_truth, generated, mask, alpha):
     and the non-removed area replaced with the grount_truth
 
     returns :
-                pl : perceptual_loss
+            pl : perceptual_loss
 '''
 def perceptual_loss(feature_extractor, ground_truth, generated, completed):
     gt_activs, nf = extract_features(feature_extractor, ground_truth)
@@ -61,7 +62,7 @@ def perceptual_loss(feature_extractor, ground_truth, generated, completed):
     gt : Ground truth image
 
     returns :
-                sl : style_loss
+            sl : style_loss
 '''
 def style_loss(feature_extractor, im, gt):
     gt_features, _ = extract_features(feature_extractor, gt)
@@ -90,7 +91,7 @@ def style_loss(feature_extractor, im, gt):
     completed : Generated image with the non-removed region replaced with ground truth
 
     returns :
-                tvl : total_variation_loss
+            tvl : total_variation_loss
 '''
 def total_variation_loss(masks, completed):
     completed = np.multiply(masks, completed)
@@ -109,63 +110,67 @@ def total_variation_loss(masks, completed):
 
 
 '''
-    Gradient Penalty loss, derived from the paper : Improved Training of Wasserstein GANs
-
-    gt : ground truth image
-    comp : completed image, with the generated image and the non-removed replaced with ground_truth
-
-    returns :
-                gpl : gradient penalty loss
-'''
-# TODO !
-def gp_loss(img, mask):
-
-    return
-
-
-'''
     GSN Loss
 
     completed : Completed image with ground truth image and the non-removed replaced with ground truth
 
     returns :
-                gsn : gsn loss
+            gsn : gsn loss
 '''
-def gsn_loss(completed, discriminator_model):
-    gsn = -1 * np.mean(discriminator_model.predict(completed))
+def gsn_loss(y_pred):
+    gsn = -1 * np.mean(y_pred)
     return gsn
 
 
 '''
     Overall loss function for generator
 
-    config : configuration object for the model
-    images : ground truth images
-    generated : output of the generator for the given images
-    masks : binary masks for the given input images
-    discriminator : instance object of the discriminator model
-    feature_extractor : VGG-16 instance object
+    y_true : the ground truth image
+    y_pred : generated image
+    mask : binary mask
+    feature_extractor : VGG 16 instance
+    config : config object of the model
 
     returns :
-                g_loss : Overall loss for the generator
+            g_loss : Overall loss for the generator
 
 '''
-def generator_loss_function(config, images, generated, masks, discriminator, feature_extractor):
-    cmp_images = complete_imgs(np.array(images), masks, generated)
-
-    ppxl_loss = per_pixel_loss(images, generated, masks, config.SCFEGAN_ALPHA)
-    perc_loss = perceptual_loss(feature_extractor, images, generated, cmp_images)
-    g_sn_loss = gsn_loss(cmp_images, discriminator)
-    sg_loss = style_loss(feature_extractor, generated, images)
-    sc_loss = style_loss(feature_extractor, cmp_images, images)
-    tv_loss = total_variation_loss(masks, cmp_images)
-    add_term = np.mean(discriminator(images) ** 2)
-
+def generator_loss_function(y_true, y_pred, mask, feature_extractor, config):
+    completed_image = complete_imgs(y_true, mask, y_pred)
+    ppxl_loss = per_pixel_loss(y_true, y_pred, mask, config.HYPERPARAMETERS.ALPHA)
+    perc_loss = perceptual_loss(feature_extractor, y_true, y_pred, completed_image)
+    g_sn_loss = 0
+    sg_loss = style_loss(feature_extractor, y_pred, y_true)
+    sc_loss = style_loss(feature_extractor, completed_image, y_true)
+    tv_loss = total_variation_loss(mask, completed_image)
+    add_term = 0
+    
     g_loss = ppxl_loss + (config.SCFEGAN_SIGMA * perc_loss)\
             + (config.SCFEGAN_BETA * g_sn_loss) + (config.SCFEGAN_GAMMA *\
             (sg_loss + sc_loss)) + (config.SCFEGAN_V * tv_loss) + add_term
 
     return g_loss
+    
+    
+'''
+    Gradient Penalty loss, derived from the paper : Improved Training of Wasserstein GANs
+
+    y_true : Ground Truth Label For Discriminator
+    y_pred : Predicted Output Of Discriminator
+    averaged_samples : Random Weighted Average Of Completed And Ground Truth Images
+
+    returns :
+            gradient penalty loss
+'''
+# Credits : https://github.com/eriklindernoren/Keras-GAN/blob/master/wgan_gp/wgan_gp.py
+def gp_loss(y_true, y_pred, averaged_samples):
+    gradients = K.gradients(y_pred, averaged_samples)[0]
+    gradients_sqr = K.square(gradients)
+    gradients_sqr_sum = K.sum(gradients_sqr,
+                            axis=np.arange(1, len(gradients_sqr.shape)))
+    gradient_l2_norm = K.sqrt(gradients_sqr_sum)
+    gradient_penalty = K.square(1 - gradient_l2_norm)
+    return K.mean(gradient_penalty)
 
 
 '''
@@ -177,8 +182,8 @@ def generator_loss_function(config, images, generated, masks, discriminator, fea
     discriminator : instance object for the discriminator model
 
     returns :
-                d_loss : overall loss of the discriminator
+            d_loss : overall loss of the discriminator
 '''
-def discriminator_loss_function(config, images, completed, discriminator):
-    d_loss = np.mean(1 - discriminator.predict(images)) + np.mean(1 + discriminator.predict(completed)) + config.SCFEGAN_THETA * gp_loss(images, completed)
+def discriminator_loss_function(config, real_out, generated_out, gp_loss_val):
+    d_loss = np.mean(1 - real_out) + np.mean(1 + generated_out) + config.HYPERPARAMETERS.SCFEGAN_THETA * gp_loss_val
     return d_loss

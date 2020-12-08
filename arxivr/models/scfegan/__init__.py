@@ -1,1 +1,1 @@
-from .model import SCFEGAN
+from .TensorFlow import SCFEGAN

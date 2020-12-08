@@ -11,18 +11,19 @@ class DISCRIMINATOR(MODEL):
         super(DISCRIMINATOR, self).__init__(config, 'discriminator')
 
     def compose_model(self):
-        inp = Input(shape=tuple((512, 512))+(3+1+3,))
-        x = SpectralNormalization(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))(inp)
+        # Input Is Generated Image(Completed) Or Ground Truth Image, Mask, Sketch And Color Info
+        inp = Input(shape=(self.config.MODEL.MODEL_PARAMS.INPUT_SHAPE[0], self.config.MODEL.MODEL_PARAMS.INPUT_SHAPE[1], 8))
+        x = SpectralNormalization(Conv2D(filters=64, kernel_size=(3, 3), strides=(2,2), activation='relu'))(inp)
         x = ZeroPadding2D(padding=(1, 1))(x)
-        x = SpectralNormalization(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))(x)
+        x = SpectralNormalization(Conv2D(filters=128, kernel_size=(3, 3), strides=(2,2), activation='relu'))(x)
         x = ZeroPadding2D(padding=(1, 1))(x)
-        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), activation='relu'))(x)
+        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), strides=(2,2), activation='relu'))(x)
         x = ZeroPadding2D(padding=(1, 1))(x)
-        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), activation='relu'))(x)
+        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), strides=(2,2), activation='relu'))(x)
         x = ZeroPadding2D(padding=(1, 1))(x)
-        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), activation='relu'))(x)
+        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), strides=(2,2), activation='relu'))(x)
         x = ZeroPadding2D(padding=(1, 1))(x)
-        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), activation='sigmoid'))(x)
+        x = SpectralNormalization(Conv2D(filters=256, kernel_size=(3, 3), strides=(2,2), activation='sigmoid'))(x)
         x = Flatten()(x)
 
         model = Model(inputs=inp, outputs=x)

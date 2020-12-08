@@ -6,6 +6,7 @@ from os import listdir
 import face_recognition
 import matplotlib.pyplot as plt
 import tensorflow.keras.backend as K
+from tensorflow.keras.layers import Layer
 from .face_toolbox_keras.models.detector import face_detector
 from .face_toolbox_keras.models.parser.face_parser import FaceParser
 
@@ -73,7 +74,6 @@ def get_color_info(image, mask):
 		bilateral = cv2.bilateralFilter(bilateral, 20, 30, 30)
 
 	# Converting to the median color based on the segmentation and then applying mask
-	# TODO : Replace With The Median Color Of The Component
 	median_image = np.zeros(image.shape)
 	for i in range(len(annotation_colors)):
 		component_mask = np.zeros(tuple(image.shape[:-1]))
@@ -171,14 +171,14 @@ def complete_imgs(images, masks, generated):
 	config : configuration object
 
 	returns :
-				inps : input to the generator : Input image (RGB)
+				inps : input to the generator : Input image (RGB) (Incomplete)
 												sketch information
 												color information
 												random noise
 												binary mask
 				ops : ground truth image
 '''
-def data_loader(config):
+def data_loader(config, gen=False):
 	all_files = listdir(config.DATA_INPUT_PATH)
 	inps = []
 	ops = []
@@ -194,6 +194,11 @@ def data_loader(config):
 		reversed_mask = np.logical_not(mask).astype(np.int32)
 
 		incomplete_image = np.multiply(reversed_mask, image)
+
+		if gen:
+			op = np.zeros(8*8*256)
+		else:
+			op = np.ones(8*8*256)
 
 		random_noise = np.zeros((np.shape(image)[0], np.shape(image)[1], 1))
 		random_noise = cv2.randn(random_noise, 0, 255)
@@ -214,7 +219,7 @@ def data_loader(config):
 		, axis=-1)
 
 		inps.append(inp)
-		ops.append(image)
+		ops.append(op)
 
 	return np.array(inps), np.array(ops)
 
@@ -244,3 +249,10 @@ def extract_features(feature_extractor, x):
 	outputs = [out[0] for out in outputs]
 
 	return outputs, nf
+
+
+class RandomWeightedAverage(Layer):
+	"""Provides a (random) weighted average between real and generated image samples"""
+	def call(self, inputs):
+		alpha = K.random_uniform(inputs[0].shape)
+		return (alpha * inputs[0]) + ((1 - alpha) * inputs[1])

@@ -22,6 +22,7 @@
     "HYPERPARAMETERS": {
         "TRAINING_BATCH_SIZE": 8,
         "NUM_EPOCHS": 100,
+        "NUM_DISC_ITERS": 5,
         "STEPS_PER_EPOCH": 0,
         "LEARNING_RATE": 1e-3,
         "MONITOR_METRIC": "val_loss",
@@ -32,7 +33,7 @@
     },
     "CONFIG_INFO": {
         "LOG_DIR": "logs",
-        "MODEL_IMAGE_PATH": "model_images",
+        "MODEL_IMAGE_PATH": "model_images/",
         "CHECKPOINTS_PATH": "checkpoints"
     }
 }
