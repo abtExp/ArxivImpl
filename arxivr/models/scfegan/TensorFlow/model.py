@@ -29,13 +29,7 @@ class SCFEGAN():
 		self.config = config
 		self.generator = GENERATOR(config)
 		self.discriminator = DISCRIMINATOR(config)
-		self.feature_extractor = VGG16(
-										input_shape=tuple(
-												self.config.MODEL.MODEL_PARAMS.INPUT_SHAPE
-											), 
-										include_top=False, 
-										weights='imagenet'
-								)
+		self.feature_extractor = VGG16(input_shape=tuple(self.config.MODEL.MODEL_PARAMS.INPUT_SHAPE), include_top=False, weights='imagenet')
 		self.feature_extractor.trainable = False
 
 		self.DATA_LOADER = None
@@ -58,10 +52,10 @@ class SCFEGAN():
 		partial_gp_loss.__name__ = 'gradient_penalty'
 
 		self.discriminator_model.compile(
-										loss=[gt_loss, comp_loss, partial_gp_loss], 
-										optimizer=Adam(),
-										loss_weights=[1, 1, self.config.HYPERPARAMETERS.THETA]
-									)
+			loss=[gt_loss, comp_loss, partial_gp_loss], 
+			optimizer=Adam(),
+			loss_weights=[1, 1, self.config.HYPERPARAMETERS.THETA]
+		)
 
 		# Graph For Generator Model
 		self.discriminator.model.trainable = False
@@ -81,40 +75,10 @@ class SCFEGAN():
 		disc_inp_gt = Concatenate()([gt_img_inp, mask, color_sketch])
 		disc_out_gt = self.discriminator.model(disc_inp_gt)
 
-		generator_loss = partial(
-							generator_loss_function, 
-							mask=mask, 
-							feature_extractor=self.feature_extractor,
-							config=self.config
-						)
+		generator_loss = partial(generator_loss_function, mask=mask, feature_extractor=self.feature_extractor, config=self.config)
 
-		self.generator_model = Model(
-								inputs=[
-										gt_img_inp, 
-										incomp_img_inp, 
-										mask, 
-										noise, 
-										color_sketch
-									], 
-								outputs=[
-										generated, 
-										disc_out_comp, 
-										disc_out_gt
-									]
-							)
-		self.generator_model.compile(
-								loss=[
-										generator_loss, 
-										gsn_loss, 
-										add_term_loss
-								], 
-								optimizer=Adam(), 
-								loss_weights=[
-										1, 
-										self.config.HYPERPARAMETERS.BETA,
-										self.config.HYPERPARAMETERS.EPS
-								]
-							)
+		self.generator_model = Model(inputs=[gt_img_inp, incomp_img_inp, mask, noise, color_sketch], outputs=[generated, disc_out_comp, disc_out_gt])
+		self.generator_model.compile(loss=[generator_loss, gsn_loss, add_term_loss], optimizer=Adam(), loss_weights=[1, self.config.HYPERPARAMETERS.BETA, self.config.HYPERPARAMETERS.EPS])
 
 	def summary(self):
 		self.generator.summary()
