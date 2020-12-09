@@ -8,6 +8,16 @@ import tensorflow as tf
 import numpy as np
 
 
+class COMPLETE_IMAGE_LAYER(Layer):
+	def __init__(self):
+		super(COMPLETE_IMAGE_LAYER, self).__init__()
+
+	def call(self, x):
+		patches = x[-1] * x[1]
+		completion = x[0] * (1 - x[1])
+		completed_images = patches + completion
+
+		return completed_images
 
 class LRNLayer(Layer):
 	def __init__(self, alpha=1e-4, beta=0.75, k=2, n=5):

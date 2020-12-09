@@ -251,8 +251,6 @@ def extract_features(feature_extractor, x):
 	return outputs, nf
 
 
-class RandomWeightedAverage(Layer):
-	"""Provides a (random) weighted average between real and generated image samples"""
-	def call(self, inputs):
-		alpha = K.random_uniform(inputs[0].shape)
-		return (alpha * inputs[0]) + ((1 - alpha) * inputs[1])
+def random_weighted_average(gt_img, comp_img):
+	alpha = np.random.uniform(size=(gt_img.shape))
+	return (alpha * gt_img) + ((1 - alpha) * comp_img)

@@ -16,10 +16,10 @@ from .utils import extract_features, complete_imgs
             ppl : per_pixel loss
 '''
 def per_pixel_loss(ground_truth, generated, mask, alpha):
-    nf = np.prod(np.shape(ground_truth[0]))
+    nf = K.prod(K.shape(ground_truth[0]))
 
-    t1 = np.sum(np.multiply(mask, np.subtract(generated, ground_truth)))/nf
-    t2 = np.sum(np.multiply((1 - mask), np.subtract(generated, ground_truth)))/nf
+    t1 = K.sum(mask * (generated - ground_truth))/nf
+    t2 = K.sum((1 - mask) * (generated - ground_truth))/nf
 
     ppl = t1 + (alpha * t2)
 
@@ -46,8 +46,8 @@ def perceptual_loss(feature_extractor, ground_truth, generated, completed):
     pl = 0
 
     for i in range(len(gt_activs)):
-        t1 = (np.sum(np.sum(np.subtract(gen_activs[i], gt_activs[i])))/nf[i])
-        t2 = (np.sum(np.sum(np.subtract(cmp_activs[i], gt_activs[i])))/nf[i])
+        t1 = (K.sum(K.sum(gen_activs[i] - gt_activs[i]))/nf[i])
+        t2 = (K.sum(K.sum(cmp_activs[i] - gt_activs[i]))/nf[i])
 
         pl += t1 + t2
 
@@ -76,10 +76,10 @@ def style_loss(feature_extractor, im, gt):
 
         per_layer_features = gt_features[i].shape[-1] ** 2
 
-        t1 = np.dot(gen_feature.T, gen_feature)
-        t2 = np.dot(gt_feature.T, gt_feature)
+        t1 = K.dot(gen_feature.T, gen_feature)
+        t2 = K.dot(gt_feature.T, gt_feature)
 
-        sl += np.sum((t1 - t2)/per_layer_features)
+        sl += K.sum((t1 - t2)/per_layer_features)
 
     return sl
 
@@ -94,7 +94,7 @@ def style_loss(feature_extractor, im, gt):
             tvl : total_variation_loss
 '''
 def total_variation_loss(masks, completed):
-    completed = np.multiply(masks, completed)
+    completed = masks * completed
 
     region = np.nonzero(completed)
 
@@ -117,9 +117,19 @@ def total_variation_loss(masks, completed):
     returns :
             gsn : gsn loss
 '''
-def gsn_loss(y_pred):
+def gsn_loss(y_true, y_pred):
     gsn = -1 * np.mean(y_pred)
     return gsn
+
+
+'''
+    add term loss
+    Just defining an the last term of the generator loss function as an additional loss
+    for weighted training loss
+    
+'''
+def add_term_loss(y_true, y_pred):
+    return K.square(K.mean(y_pred))
 
 
 '''
@@ -139,16 +149,12 @@ def generator_loss_function(y_true, y_pred, mask, feature_extractor, config):
     completed_image = complete_imgs(y_true, mask, y_pred)
     ppxl_loss = per_pixel_loss(y_true, y_pred, mask, config.HYPERPARAMETERS.ALPHA)
     perc_loss = perceptual_loss(feature_extractor, y_true, y_pred, completed_image)
-    g_sn_loss = 0
     sg_loss = style_loss(feature_extractor, y_pred, y_true)
     sc_loss = style_loss(feature_extractor, completed_image, y_true)
     tv_loss = total_variation_loss(mask, completed_image)
-    add_term = 0
     
-    g_loss = ppxl_loss + (config.SCFEGAN_SIGMA * perc_loss)\
-            + (config.SCFEGAN_BETA * g_sn_loss) + (config.SCFEGAN_GAMMA *\
-            (sg_loss + sc_loss)) + (config.SCFEGAN_V * tv_loss) + add_term
-
+    g_loss = ppxl_loss + (config.SCFEGAN_SIGMA * perc_loss) + (config.SCFEGAN_GAMMA *\
+            (sg_loss + sc_loss)) + (config.SCFEGAN_V * tv_loss)
     return g_loss
     
     
@@ -174,16 +180,14 @@ def gp_loss(y_true, y_pred, averaged_samples):
 
 
 '''
-    Overall loss function for discriminator
-
-    config : configuration object for the model
-    images : ground truth images
-    completed : output of the generator with the non-removed area replaced with the ground truth
-    discriminator : instance object for the discriminator model
-
-    returns :
-            d_loss : overall loss of the discriminator
+1st term of the overall discriminator loss
 '''
-def discriminator_loss_function(config, real_out, generated_out, gp_loss_val):
-    d_loss = np.mean(1 - real_out) + np.mean(1 + generated_out) + config.HYPERPARAMETERS.SCFEGAN_THETA * gp_loss_val
-    return d_loss
+def gt_loss(y_true, y_pred):
+    return K.mean(1 - y_pred)
+
+
+'''
+2nd term of the overall discriminator loss
+'''
+def comp_loss(y_true, y_pred):
+    return K.mean(1 + y_pred)

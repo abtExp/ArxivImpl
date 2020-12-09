@@ -25,11 +25,16 @@
         "NUM_DISC_ITERS": 5,
         "STEPS_PER_EPOCH": 0,
         "LEARNING_RATE": 1e-3,
-        "MONITOR_METRIC": "val_loss",
         "SAVE_WEIGHTS": true,
         "EARLY_STOP_EPOCHS": 2,
         "DROPOUT_RATIO": 0.3,
-        "LR_DECAY_ALPHA": 0.4
+        "LR_DECAY_ALPHA": 0.4,
+        "SIGMA": 5e-2,
+        "BETA": 1e-3,
+        "GAMMA": 120,
+        "MEW": 0.1,
+        "EPS": 1e-3,
+        "THETA": 10
     },
     "CONFIG_INFO": {
         "LOG_DIR": "logs",
