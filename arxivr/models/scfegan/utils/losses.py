@@ -16,10 +16,10 @@ from .utils import extract_features, complete_imgs
             ppl : per_pixel loss
 '''
 def per_pixel_loss(ground_truth, generated, mask, alpha):
-    nf = K.prod(K.shape(ground_truth[0]))
+    nf = np.prod(np.shape(ground_truth[0]))
 
-    t1 = K.sum(mask * (generated - ground_truth))/nf
-    t2 = K.sum((1 - mask) * (generated - ground_truth))/nf
+    t1 = np.sum(np.multiply(mask, np.subtract(generated, ground_truth)))/nf
+    t2 = np.sum(np.multiply((1 - mask), np.subtract(generated, ground_truth)))/nf
 
     ppl = t1 + (alpha * t2)
 
@@ -46,8 +46,8 @@ def perceptual_loss(feature_extractor, ground_truth, generated, completed):
     pl = 0
 
     for i in range(len(gt_activs)):
-        t1 = (K.sum(K.sum(gen_activs[i] - gt_activs[i]))/nf[i])
-        t2 = (K.sum(K.sum(cmp_activs[i] - gt_activs[i]))/nf[i])
+        t1 = (np.sum(np.sum(np.subtract(gen_activs[i], gt_activs[i])))/nf[i])
+        t2 = (np.sum(np.sum(np.subtract(cmp_activs[i], gt_activs[i])))/nf[i])
 
         pl += t1 + t2
 
@@ -76,10 +76,10 @@ def style_loss(feature_extractor, im, gt):
 
         per_layer_features = gt_features[i].shape[-1] ** 2
 
-        t1 = K.dot(gen_feature.T, gen_feature)
-        t2 = K.dot(gt_feature.T, gt_feature)
+        t1 = np.dot(gen_feature.T, gen_feature)
+        t2 = np.dot(gt_feature.T, gt_feature)
 
-        sl += K.sum((t1 - t2)/per_layer_features)
+        sl += np.sum((t1 - t2)/per_layer_features)
 
     return sl
 
@@ -94,7 +94,7 @@ def style_loss(feature_extractor, im, gt):
             tvl : total_variation_loss
 '''
 def total_variation_loss(masks, completed):
-    completed = masks * completed
+    completed = np.multiply(masks, completed)
 
     region = np.nonzero(completed)
 
@@ -129,7 +129,7 @@ def gsn_loss(y_true, y_pred):
     
 '''
 def add_term_loss(y_true, y_pred):
-    return K.square(K.mean(y_pred))
+    return np.square(np.mean(y_pred))
 
 
 '''
@@ -183,11 +183,11 @@ def gp_loss(y_true, y_pred, averaged_samples):
 1st term of the overall discriminator loss
 '''
 def gt_loss(y_true, y_pred):
-    return K.mean(1 - y_pred)
+    return np.mean(1 - y_pred)
 
 
 '''
 2nd term of the overall discriminator loss
 '''
 def comp_loss(y_true, y_pred):
-    return K.mean(1 + y_pred)
+    return np.mean(1 + y_pred)
