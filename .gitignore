@@ -134,3 +134,6 @@ dmypy.json
 .github
 .vscode
 prototypes
+**/data/
+**/tests/
+**/__pycache__/

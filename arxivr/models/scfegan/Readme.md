@@ -1,12 +1,12 @@
 Remaining Tasks : 
 
-1. Define the dataloader
+--1. Define the dataloader--
 
 --2. In getting the color info, replace the color with the median color of the segment--
 
 --3. Fix G_SN loss and the add term in the generator loss--
 
-4. Test the data generation and the training code.
+--4. Test the data generation and the training code.--
 
 5. Start training
 

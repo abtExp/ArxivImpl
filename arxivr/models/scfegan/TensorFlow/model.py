@@ -32,7 +32,7 @@ class SCFEGAN():
 		self.feature_extractor = VGG16(input_shape=tuple(self.config.MODEL.MODEL_PARAMS.INPUT_SHAPE), include_top=False, weights='imagenet')
 		self.feature_extractor.trainable = False
 
-		self.DATA_LOADER = None
+		self.DATA_LOADER = DATA_LOADER(self.config)
 
 		# Graph For Discriminator
 		gt_inp = Input(shape=(*self.config.MODEL.MODEL_PARAMS.INPUT_SHAPE[:2], 8))
@@ -46,9 +46,9 @@ class SCFEGAN():
 		self.discriminator_model = Model(inputs=[gt_inp, comp_inp, avgd_inp], outputs=[real, completed, avgd_out])
 
 		partial_gp_loss = partial(
-								gp_loss,
-								averaged_samples=avgd_inp
-						)
+						gp_loss,
+						averaged_samples=avgd_inp
+					)
 		partial_gp_loss.__name__ = 'gradient_penalty'
 
 		self.discriminator_model.compile(

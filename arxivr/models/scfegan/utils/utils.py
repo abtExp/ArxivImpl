@@ -74,15 +74,16 @@ def get_color_info(image, mask):
 		bilateral = cv2.bilateralFilter(bilateral, 20, 30, 30)
 
 	# Converting to the median color based on the segmentation and then applying mask
-	median_image = np.zeros(image.shape)
+	median_image = np.zeros(bilateral.shape)
 	for i in range(len(annotation_colors)):
 		component_mask = np.zeros(tuple(image.shape[:-1]))
 		component_mask[parsed[0] == i] = 1
 		masked = np.multiply(cv2.cvtColor(bilateral, cv2.COLOR_RGB2BGR), np.expand_dims(component_mask, axis=-1))
 		median_image += masked
 
+	cv2.imwrite('./masked.jpg', cv2.cvtColor(median_image.astype(np.uint8), cv2.COLOR_RGB2BGR))
 	color = np.multiply(median_image, mask)
-
+	color = color.astype(np.uint8)
 	return color
 
 
@@ -100,35 +101,35 @@ def get_color_info(image, mask):
 				mask_panel : binary mask
 
 '''
-def create_mask(img, max_draws=10, max_len=50, max_angle=60, max_lines=10, shape=(256, 256)):
-	mask_panel = np.zeros(shape)
+def create_mask(img, max_draws=20, max_len=150, max_angle=60, max_lines=20, shape=(256, 256)):
+	mask_panel = np.zeros(tuple(img.shape[:-1]))
 
-	num_lines = np.random.randint(0, max_draws)
+	num_lines = np.random.randint(5, max_draws)
 
 	bbox = face_recognition.face_locations(img)[0]
 
 	if len(bbox) > 0:
 		mask = np.zeros((bbox[1]-bbox[3], bbox[2]-bbox[0]))
 
-		for i in range(0, num_lines):
+		for i in range(num_lines):
 			start_x = np.random.randint(0, bbox[2]-bbox[0])
 			start_y = np.random.randint(0, bbox[1]-bbox[3])
 			start_angle = np.random.randint(0, 360)
 			num_vertices = np.random.randint(0, max_lines)
 
-			for j in range(0, num_vertices):
+			for j in range(num_vertices):
 				angle_change = np.random.randint(-max_angle, max_angle)
 				if j%2 == 0:
 					angle = start_angle + angle_change
 				else:
 					angle = start_angle + angle_change + 180
 
-				length = np.random.randint(0, max_len)
+				length = np.random.randint(1, max_len)
 
 				end_x = start_x+int(length * math.cos(math.radians(angle)))
 				end_y = start_y+int(length * math.sin(math.radians(angle)))
 
-				mask = cv2.line(mask, (start_x, start_y), (end_x, end_y), (255, 255, 255), 5)
+				mask = cv2.line(mask, (start_x, start_y), (end_x, end_y), (255, 255, 255), 15)
 
 				start_x = end_x
 				start_y = end_y
@@ -136,9 +137,10 @@ def create_mask(img, max_draws=10, max_len=50, max_angle=60, max_lines=10, shape
 		mask = np.array(mask, dtype='int32')
 		mask_panel[bbox[3]:bbox[1], bbox[0]:bbox[2]] = mask[:,:]
 
-		if np.random.randint(0, 10) > 5:
+		hair_mask_num = np.random.randint(0, 10)
+		if hair_mask_num > 5:
 			hair_mask = get_hair_mask(img)
-			mask += hair_mask
+			mask_panel += hair_mask
 
 		return mask_panel
 	else:
@@ -156,42 +158,31 @@ def create_mask(img, max_draws=10, max_len=50, max_angle=60, max_lines=10, shape
 				completed_images : generated image with the non-removed part replaced by ground truth image
 '''
 def complete_imgs(images, masks, generated):
-    patches = generated * masks
-    reversed_mask = np.logical_not(masks, dtype=np.int)
+    patches = np.multiply(generated, masks)
+    reversed_mask = 1 - masks
 
-    completion = images * reversed_mask
+    completion = np.multiply(images, reversed_mask)
     completed_images = np.add(patches, completion)
+    completed_images = completed_images.astype(npx.uint8)
 
     return completed_images
 
 
 '''
-	Data loader
-
-	config : configuration object
-
-	returns :
-				inps : input to the generator : Input image (RGB) (Incomplete)
-												sketch information
-												color information
-												random noise
-												binary mask
-				ops : ground truth image
+	DATA_LOADER
 '''
-def data_loader(config, gen=False):
-	all_files = listdir(config.DATA_INPUT_PATH)
-	inps = []
-	ops = []
-
-	for file in all_files:
-		image = cv2.imread(config.DATA_INPUT_PATH+file)
-		image = cv2.resize(image, config.INP_SHAPE)
-
+class DATA_LOADER():
+    def __init__(self, config):
+        self.config = config
+        
+    def get_batch(self):
+        image = cv2.imread(image_path)
 		mask = create_mask(image)
 
 		mask = np.expand_dims(mask, axis=-1)
 
-		reversed_mask = np.logical_not(mask).astype(np.int32)
+		reversed_mask = 1 - mask
+		reversed_mask = reversed_mask.astype(np.uint8)
 
 		incomplete_image = np.multiply(reversed_mask, image)
 
@@ -208,20 +199,7 @@ def data_loader(config, gen=False):
 
 		color = get_color_info(image, mask)
 
-		inp = np.concatenate(
-			[
-				incomplete_image,
-				mask,
-				sketch,
-				color,
-				random_noise
-			]
-		, axis=-1)
-
-		inps.append(inp)
-		ops.append(op)
-
-	return np.array(inps), np.array(ops)
+        return img, incomplete_img, mask, sketch, color, noise, label
 
 
 '''
