@@ -16,4 +16,4 @@ Remaining Tasks :
 
 --8. Add All The Missing Variables and hyperparameters to the config.json.--
 
-9. Update the paper_descriptions file for SC-FEGAN
+--9. Update the paper_descriptions file for SC-FEGAN--

@@ -3,10 +3,11 @@ import cv2
 import math
 import numpy as np
 from os import listdir
+import tensorflow as tf
 import face_recognition
 import matplotlib.pyplot as plt
 import tensorflow.keras.backend as K
-from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Layer, add, multiply
 from .face_toolbox_keras.models.detector import face_detector
 from .face_toolbox_keras.models.parser.face_parser import FaceParser
 
@@ -158,38 +159,39 @@ def create_mask(img, max_draws=20, max_len=150, max_angle=60, max_lines=20, shap
 				completed_images : generated image with the non-removed part replaced by ground truth image
 '''
 def complete_imgs(images, masks, generated):
-    patches = np.multiply(generated, masks)
-    reversed_mask = 1 - masks
-
-    completion = np.multiply(images, reversed_mask)
-    completed_images = np.add(patches, completion)
-    completed_images = completed_images.astype(npx.uint8)
-
-    return completed_images
+	patches = multiply([generated, masks])
+	completion = multiply([images, (1 - masks)])
+	completed_images = add([patches, completion])
+	
+	return completed_images
 
 
 '''
 	DATA_LOADER
 '''
 class DATA_LOADER():
-    def __init__(self, config):
-        self.config = config
-        
-    def get_batch(self):
-        image = cv2.imread(image_path)
+	def __init__(self, config):
+		self.config = config
+		self.file_list = os.listdir(self.config.DATASET.DATA_PATH)
+		self.indices = np.arange(0, len(self.file_list))
+
+	def get_batch(self):
+		idx = np.random.choice(self.indices, self.config.HYPERPARAMETERS.TRAINING_BATCH_SIZE)
+
+		image_path = self.config.DATASET.DATA_PATH+self.file_list[idx]
+		image = cv2.imread(image_path)
+
 		mask = create_mask(image)
 
 		mask = np.expand_dims(mask, axis=-1)
-
 		reversed_mask = 1 - mask
 		reversed_mask = reversed_mask.astype(np.uint8)
-
 		incomplete_image = np.multiply(reversed_mask, image)
 
 		if gen:
-			op = np.zeros(8*8*256)
+			label = np.zeros(8*8*256)
 		else:
-			op = np.ones(8*8*256)
+			label = np.ones(8*8*256)
 
 		random_noise = np.zeros((np.shape(image)[0], np.shape(image)[1], 1))
 		random_noise = cv2.randn(random_noise, 0, 255)
@@ -199,7 +201,7 @@ class DATA_LOADER():
 
 		color = get_color_info(image, mask)
 
-        return img, incomplete_img, mask, sketch, color, noise, label
+		return image, incomplete_image, mask, sketch, color, random_noise, label
 
 
 '''

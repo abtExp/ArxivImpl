@@ -1,11 +1,11 @@
-from tensorflow.keras.layers import Layer, Conv2D, Conv2DTranspose, \
-									Reshape, Multiply, LeakyReLU, \
-									Activation, multiply, BatchNormalization
-
-import tensorflow.keras.backend as K
+import numpy as np
 import tensorflow as tf
 
-import numpy as np
+from tensorflow.keras.layers import Layer, Conv2D, Conv2DTranspose, \
+									Reshape, Multiply, LeakyReLU, \
+									Activation, multiply, BatchNormalization, add
+
+import tensorflow.keras.backend as K
 
 
 class COMPLETE_IMAGE_LAYER(Layer):
@@ -13,9 +13,9 @@ class COMPLETE_IMAGE_LAYER(Layer):
 		super(COMPLETE_IMAGE_LAYER, self).__init__()
 
 	def call(self, x):
-		patches = x[-1] * x[1]
-		completion = x[0] * (1 - x[1])
-		completed_images = patches + completion
+		patches = multiply([x[-1], x[1]])
+		completion = multiply([x[0], (1 - x[1])])
+		completed_images = add([patches, completion])
 
 		return completed_images
 

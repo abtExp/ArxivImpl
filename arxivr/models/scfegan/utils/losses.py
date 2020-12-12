@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.layers import add, subtract
 import tensorflow.keras.backend as K
 from .utils import extract_features, complete_imgs
 
@@ -16,10 +17,10 @@ from .utils import extract_features, complete_imgs
             ppl : per_pixel loss
 '''
 def per_pixel_loss(ground_truth, generated, mask, alpha):
-    nf = np.prod(np.shape(ground_truth[0]))
+    nf = K.prod(K.shape(ground_truth[0]))
 
-    t1 = np.sum(np.multiply(mask, np.subtract(generated, ground_truth)))/nf
-    t2 = np.sum(np.multiply((1 - mask), np.subtract(generated, ground_truth)))/nf
+    t1 = K.sum(K.dot(mask, subtract(generated, ground_truth)))/nf
+    t2 = K.sum(K.dot((1 - mask), subtract(generated, ground_truth)))/nf
 
     ppl = t1 + (alpha * t2)
 
@@ -46,8 +47,8 @@ def perceptual_loss(feature_extractor, ground_truth, generated, completed):
     pl = 0
 
     for i in range(len(gt_activs)):
-        t1 = (np.sum(np.sum(np.subtract(gen_activs[i], gt_activs[i])))/nf[i])
-        t2 = (np.sum(np.sum(np.subtract(cmp_activs[i], gt_activs[i])))/nf[i])
+        t1 = (add(add(subtract(gen_activs[i], gt_activs[i])))/nf[i])
+        t2 = (add(add(subtract(cmp_activs[i], gt_activs[i])))/nf[i])
 
         pl += t1 + t2
 
@@ -76,10 +77,10 @@ def style_loss(feature_extractor, im, gt):
 
         per_layer_features = gt_features[i].shape[-1] ** 2
 
-        t1 = np.dot(gen_feature.T, gen_feature)
-        t2 = np.dot(gt_feature.T, gt_feature)
+        t1 = K.dot(gen_feature.T, gen_feature)
+        t2 = K.dot(gt_feature.T, gt_feature)
 
-        sl += np.sum((t1 - t2)/per_layer_features)
+        sl += add((t1 - t2)/per_layer_features)
 
     return sl
 
@@ -94,15 +95,15 @@ def style_loss(feature_extractor, im, gt):
             tvl : total_variation_loss
 '''
 def total_variation_loss(masks, completed):
-    completed = np.multiply(masks, completed)
+    completed = K.dot(masks, completed)
 
     region = np.nonzero(completed)
 
-    tvl_row = np.sum([np.sum(completed[i+1, j, :] - completed[i,j, :]) for i in region[0] for j in region[1]])
-    tvl_row = tvl_row/np.size(completed)
+    tvl_row = add([add(completed[i+1, j, :] - completed[i,j, :]) for i in region[0] for j in region[1]])
+    tvl_row = tvl_row/K.size(completed)
 
-    tvl_col = np.sum([np.sum(completed[i, j+1, :] - completed[i,j, :]) for i in region[0] for j in region[1]])
-    tvl_col = tvl_col/np.size(completed)
+    tvl_col = add([add(completed[i, j+1, :] - completed[i,j, :]) for i in region[0] for j in region[1]])
+    tvl_col = tvl_col/K.size(completed)
 
     tvl = tvl_row + tvl_col
 
@@ -145,7 +146,7 @@ def add_term_loss(y_true, y_pred):
             g_loss : Overall loss for the generator
 
 '''
-def generator_loss_function(y_true, y_pred, mask, feature_extractor, config):
+def generator_loss_function(y_true, y_pred, mask, feature_extractor, config, sample_weight):
     completed_image = complete_imgs(y_true, mask, y_pred)
     ppxl_loss = per_pixel_loss(y_true, y_pred, mask, config.HYPERPARAMETERS.ALPHA)
     perc_loss = perceptual_loss(feature_extractor, y_true, y_pred, completed_image)
