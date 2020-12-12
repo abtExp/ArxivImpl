@@ -5,25 +5,6 @@ Summarizing and implementing research papers from arxiv.org
 ###### Included Papers
 <ol>
 <li><a href=''>SC-FEGAN</a></li>
-<li><a href=''>ENet</a></li>
-<li><a href=''>Spatio-Temporal Video Autoencoder With Differentiable Memory</a></li>
-<li><a href=''>OctConv</a></li>
-</ol>
-
-###### Upcoming Papers
-<ol>
-<li>Voice Filter</li>
-<li>U-Net</li>
-<li>CSR-Net</li>
-<li>Context Gated Convolution</li>
-</ol>
 
 
-### Roadmap
-
-- [ ] Fix the existing implementation bugs.
-- [ ] Make a common framework for accessing different models.
-- [ ] Write brief insights for each paper.
-- [ ] Add the pending list of paper implementations.
-- [ ] Upload pertained models for each paper.
-- [x] Update the readme.
+All the model implementations can be found in their respective folders in  arxivr > models > model_name .
