@@ -16,6 +16,7 @@ Evaluation Code From Authors Available <a href='https://github.com/run-youngjoo/
 
 <br />
 
+###### This implementation is according to the best of my understanding of the paper and some components might be different than the original.
 _____________________________________________________________________________________
 #### Summary
 
@@ -26,6 +27,37 @@ The model depends on the generator generating real like features, and trains usi
 
 _____________________________________________________________________________________
 
+
+#### Data Generation And Preprocessing
+1. Celeba HQ Dataset is used with 29k training and 1k testing images
+2. Image shape (512, 512)
+3. The input to the generator is (512, 512, 9) => 
+    3.1 RGB Incomplete Image (512, 512, 3)
+    3.2 Binary Mask Which Removes Certain Sections Of The Image(512, 512, 1)
+    3.3 Sketch, immitating the use input for guided completion (512, 512, 1)
+    3.4 Color Information, The median color information of different segments of the face, useful for passing color information and avoiding artifacts. (512, 512, 3)
+    3.5 Random Noise (512, 512, 1)
+
+4. Binary Mask is generated following the algorithm mentioned in the SN-PatchGAN paper
+
+5. Face is segmented into different sections namely : [
+  '0, background', '1, skin', '2, left eyebrow', '3, right eyebrow',
+  '4, left eye', '5, right eye', '6, glasses', '7, left ear', '8, right ear', '9, earings',
+  '10, nose', '11, mouth', '12, upper lip', '13, lower lip',
+  '14, neck', '15, neck_l', '16, cloth', '17, hair', '18, hat'
+]
+
+6. The image is blurred using bilateral filter and median filter, then the segments are used to get the median color of each segment and each segment is assigned the median color and then multiplied with the mask to get the color information of that region only.
+
+7. Sketch information is retrieved using edge detection and applying the mask to it.
+
+8. Random noise is generated using gaussian distribution.
+
+9. Input to discriminator is (512, 512, 8) =>
+9.1 Ground truth image, or completed image, i.e., the output of the generator for the masked region and the non masked region replaced by the ground truth image (512, 512, 3)
+9.2 Binary Mask (512, 512, 1)
+9.3 Sketch (512, 512, 1)
+9.4 Color Information (512, 512, 3)
 #### Architecture
 
 1. *<b>Discriminator</b>*
@@ -58,9 +90,6 @@ ________________________________________________________________________________
 
 
 <img src='./arch.png' alt='spatio-temporal video autoencoder'/>
-
-_____________________________________________________________________________________
-#### Training Process
 
 _____________________________________________________________________________________
 ##### Loss Functions
@@ -105,3 +134,5 @@ Only a few layer activations are used instead of the final activations. In the p
 
 6. <b>L<sub>G</sub></b> = $\mathbb{E}[(||\nabla_{U}D(U)\odot M||_{2} -1)^2]$ => The WGAN Loss.
 _____________________________________________________________________________________
+
+#### Training Process : 

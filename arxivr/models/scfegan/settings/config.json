@@ -5,34 +5,44 @@
         "MODEL_TYPE": "gan",
         "PROBLEM_TYPE": "inpainting",
         "MODEL_PARAMS": {
-            "INPUT_SHAPE": [224, 224, 3],
+            "INPUT_SHAPE": [512, 512, 3],
             "KERNEL_SIZE": [3, 3],
             "STRIDES": [2, 2]
         }
     },
+
     "DATASET": {
         "INTERFACE_TYPE": "directory",
         "INTERFACE_PATH": "",
-        "DATA_PATH": "_path_to_celeba_dset_",
+        "DATA_PATH": "D:/exp_labs/arxivr/arxivr/models/scfegan/data/images/",
         "DIRECTORIES": "",
         "TRAIN_TEST_SPLIT": true,
         "INPUT_TYPE": "image",
         "TARGET_PATH": ""
     },
+
     "HYPERPARAMETERS": {
-        "TRAINING_BATCH_SIZE": 8,
+        "TRAINING_BATCH_SIZE": 1,
         "NUM_EPOCHS": 100,
+        "NUM_DISC_ITERS": 5,
         "STEPS_PER_EPOCH": 0,
         "LEARNING_RATE": 1e-3,
-        "MONITOR_METRIC": "val_loss",
         "SAVE_WEIGHTS": true,
         "EARLY_STOP_EPOCHS": 2,
         "DROPOUT_RATIO": 0.3,
-        "LR_DECAY_ALPHA": 0.4
+        "LR_DECAY_ALPHA": 0.4,
+        "ALPHA": 2,
+        "SIGMA": 5e-2,
+        "BETA": 1e-3,
+        "GAMMA": 120,
+        "MEW": 0.1,
+        "EPS": 1e-3,
+        "THETA": 10
     },
+
     "CONFIG_INFO": {
         "LOG_DIR": "logs",
-        "MODEL_IMAGE_PATH": "model_images",
+        "MODEL_IMAGE_PATH": "D:/exp_labs/arxivr/arxivr/models/scfegan/model_images/",
         "CHECKPOINTS_PATH": "checkpoints"
     }
 }
