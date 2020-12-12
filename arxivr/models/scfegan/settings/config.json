@@ -10,6 +10,7 @@
             "STRIDES": [2, 2]
         }
     },
+
     "DATASET": {
         "INTERFACE_TYPE": "directory",
         "INTERFACE_PATH": "",
@@ -19,6 +20,7 @@
         "INPUT_TYPE": "image",
         "TARGET_PATH": ""
     },
+
     "HYPERPARAMETERS": {
         "TRAINING_BATCH_SIZE": 8,
         "NUM_EPOCHS": 100,
@@ -36,6 +38,7 @@
         "EPS": 1e-3,
         "THETA": 10
     },
+
     "CONFIG_INFO": {
         "LOG_DIR": "logs",
         "MODEL_IMAGE_PATH": "model_images/",

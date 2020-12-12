@@ -118,7 +118,7 @@ def total_variation_loss(masks, completed):
             gsn : gsn loss
 '''
 def gsn_loss(y_true, y_pred):
-    gsn = -1 * np.mean(y_pred)
+    gsn = -1 * K.mean(y_pred)
     return gsn
 
 
@@ -129,7 +129,7 @@ def gsn_loss(y_true, y_pred):
     
 '''
 def add_term_loss(y_true, y_pred):
-    return np.square(np.mean(y_pred))
+    return K.square(K.mean(y_pred))
 
 
 '''
@@ -183,11 +183,11 @@ def gp_loss(y_true, y_pred, averaged_samples):
 1st term of the overall discriminator loss
 '''
 def gt_loss(y_true, y_pred):
-    return np.mean(1 - y_pred)
+    return K.mean(1 - y_pred)
 
 
 '''
 2nd term of the overall discriminator loss
 '''
 def comp_loss(y_true, y_pred):
-    return np.mean(1 + y_pred)
+    return K.mean(1 + y_pred)
