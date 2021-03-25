@@ -8,11 +8,11 @@ Remaining Tasks :
 
 - [x] 4. Test the data generation and the training code.
 
-- [] 5. Start training
+- [ ] 5. Start training
 
-- [] 6. Upload the fixed and updated code to github and upload weights
+- [ ] 6. Upload the fixed and updated code to github and upload weights
 
-- [] 7. Implement the same in PyTorch
+- [ ] 7. Implement the same in PyTorch
 
 - [x] 8. Add All The Missing Variables and hyperparameters to the config.json.
 
